@@ -188,6 +188,37 @@
         background-color: #3058b0;
         box-shadow: 0 4px 8px rgba(62, 109, 211, 0.2);
     }
+    
+    /* Thêm style mới cho danh sách khách hàng theo trạng thái */
+    .customer-column {
+        margin-bottom: 20px;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .customer-column h3 {
+        font-size: 1rem;
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 15px;
+        margin-bottom: 0;
+        color: #333;
+        background-color: #e9ecef;
+        border-bottom: 2px solid var(--primary-color);
+    }
+    
+    .customer-cards {
+        max-height: 380px;
+        overflow-y: auto;
+        padding: 10px;
+        background-color: #f8f9fa;
+    }
+    
+    .customer-column .badge {
+        font-size: 0.7rem;
+        padding: 3px 8px;
+        border-radius: 20px;
+    }
 </style>
 {% endblock %}
 
@@ -229,7 +260,7 @@
         <div class="stat-card">
             <i class="fas fa-shopping-cart stat-icon"></i>
             <h4>Đã mua gói tập</h4>
-            <div class="stat-value">{{ purchased_customers }}</div>
+            <div class="stat-value">{{ purchased_customers_count }}</div>
         </div>
         <div class="stat-card">
             <i class="fas fa-history stat-icon"></i>
@@ -244,89 +275,213 @@
             <h5 class="mb-0">Trạng thái khách hàng</h5>
         </div>
         <div class="card-body">
-            <div class="customer-boards">
-                <div class="customer-column">
-                    <h3>Khách hàng tiềm năng</h3>
-                    <div class="customer-cards">
-                        {% for customer in potential_customers %}
-                            <div class="customer-card">
-                                <div class="card-header">
-                                    {% if customer.profile_image %}
-                                        <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
-                                    {% else %}
-                                        <div class="customer-avatar-placeholder">{{ customer.full_name|first }}</div>
-                                    {% endif %}
-                                    <div class="customer-name">{{ customer.full_name }}</div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="customer-column mb-4">
+                        <h3>Khách hàng liên hệ ({{ contact_customers|length }})</h3>
+                        <div class="customer-cards">
+                            {% for customer in contact_customers %}
+                                <div class="customer-card">
+                                    <div class="card-header">
+                                        {% if customer.profile_image %}
+                                            <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+                                        {% else %}
+                                            <div class="customer-avatar-placeholder">{{ customer.full_name|first }}</div>
+                                        {% endif %}
+                                        <div class="customer-name">{{ customer.full_name }}</div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+                                        <p><i class="fas fa-envelope"></i> {{ customer.email|default:"Chưa có email" }}</p>
+                                        <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date|date:"d/m/Y" }}</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <a href="{% url 'dashboard:customer_detail' customer.id %}" class="btn btn-sm btn-info">Chi tiết</a>
+                                        <a href="{% url 'dashboard:customer_edit' customer.id %}" class="btn btn-sm btn-warning">Cập nhật</a>
+                                    </div>
                                 </div>
-                                <div class="card-body">
-                                    <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
-                                    <p><i class="fas fa-envelope"></i> {{ customer.email|default:"Chưa có email" }}</p>
-                                    <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date|date:"d/m/Y" }}</p>
+                            {% empty %}
+                                <div class="alert alert-info">Không có khách hàng liên hệ</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="customer-column mb-4">
+                        <h3>Khách hàng tập thử ({{ trial_customers|length }})</h3>
+                        <div class="customer-cards">
+                            {% for customer in trial_customers %}
+                                <div class="customer-card">
+                                    <div class="card-header">
+                                        {% if customer.profile_image %}
+                                            <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+                                        {% else %}
+                                            <div class="customer-avatar-placeholder">{{ customer.full_name|first }}</div>
+                                        {% endif %}
+                                        <div class="customer-name">{{ customer.full_name }}</div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+                                        <p><i class="fas fa-envelope"></i> {{ customer.email|default:"Chưa có email" }}</p>
+                                        <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date|date:"d/m/Y" }}</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <a href="{% url 'dashboard:customer_detail' customer.id %}" class="btn btn-sm btn-info">Chi tiết</a>
+                                        <a href="{% url 'dashboard:customer_edit' customer.id %}" class="btn btn-sm btn-warning">Cập nhật</a>
+                                    </div>
                                 </div>
-                                <div class="card-footer">
-                                    <a href="{% url 'dashboard:customer_detail' customer.id %}" class="btn btn-sm btn-info">Chi tiết</a>
-                                    <a href="{% url 'dashboard:customer_edit' customer.id %}" class="btn btn-sm btn-warning">Cập nhật</a>
-                                </div>
-                            </div>
-                        {% empty %}
-                            <div class="alert alert-info">Không có khách hàng tiềm năng</div>
-                        {% endfor %}
+                            {% empty %}
+                                <div class="alert alert-info">Không có khách hàng tập thử</div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
-                <div class="customer-column">
-                    <h3>Khách hàng dùng thử</h3>
-                    <div class="customer-cards">
-                        {% for customer in trial_customers %}
-                            <div class="customer-card">
-                                <div class="card-header">
-                                    {% if customer.profile_image %}
-                                        <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
-                                    {% else %}
-                                        <div class="customer-avatar-placeholder">{{ customer.full_name|first }}</div>
-                                    {% endif %}
-                                    <div class="customer-name">{{ customer.full_name }}</div>
+                
+                <div class="col-md-4">
+                    <div class="customer-column mb-4">
+                        <h3>Khách hàng đã mua ({{ purchased_customers|length }})</h3>
+                        <div class="customer-cards">
+                            {% for customer in purchased_customers %}
+                                <div class="customer-card">
+                                    <div class="card-header">
+                                        {% if customer.profile_image %}
+                                            <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+                                        {% else %}
+                                            <div class="customer-avatar-placeholder">{{ customer.full_name|first }}</div>
+                                        {% endif %}
+                                        <div class="customer-name">{{ customer.full_name }}</div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+                                        <p><i class="fas fa-envelope"></i> {{ customer.email|default:"Chưa có email" }}</p>
+                                        <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date|date:"d/m/Y" }}</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <a href="{% url 'dashboard:customer_detail' customer.id %}" class="btn btn-sm btn-info">Chi tiết</a>
+                                        <a href="{% url 'dashboard:customer_edit' customer.id %}" class="btn btn-sm btn-warning">Cập nhật</a>
+                                    </div>
                                 </div>
-                                <div class="card-body">
-                                    <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
-                                    <p><i class="fas fa-envelope"></i> {{ customer.email|default:"Chưa có email" }}</p>
-                                    <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date|date:"d/m/Y" }}</p>
+                            {% empty %}
+                                <div class="alert alert-info">Không có khách hàng đã mua</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="customer-column mb-4">
+                        <h3>Khách hàng tái mua ({{ repurchased_customers|length }})</h3>
+                        <div class="customer-cards">
+                            {% for customer in repurchased_customers %}
+                                <div class="customer-card">
+                                    <div class="card-header">
+                                        {% if customer.profile_image %}
+                                            <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+                                        {% else %}
+                                            <div class="customer-avatar-placeholder">{{ customer.full_name|first }}</div>
+                                        {% endif %}
+                                        <div class="customer-name">{{ customer.full_name }}</div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+                                        <p><i class="fas fa-envelope"></i> {{ customer.email|default:"Chưa có email" }}</p>
+                                        <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date|date:"d/m/Y" }}</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <a href="{% url 'dashboard:customer_detail' customer.id %}" class="btn btn-sm btn-info">Chi tiết</a>
+                                        <a href="{% url 'dashboard:customer_edit' customer.id %}" class="btn btn-sm btn-warning">Cập nhật</a>
+                                    </div>
                                 </div>
-                                <div class="card-footer">
-                                    <a href="{% url 'dashboard:customer_detail' customer.id %}" class="btn btn-sm btn-info">Chi tiết</a>
-                                    <a href="{% url 'dashboard:customer_edit' customer.id %}" class="btn btn-sm btn-warning">Cập nhật</a>
-                                </div>
-                            </div>
-                        {% empty %}
-                            <div class="alert alert-info">Không có khách hàng dùng thử</div>
-                        {% endfor %}
+                            {% empty %}
+                                <div class="alert alert-info">Không có khách hàng tái mua</div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
-                <div class="customer-column">
-                    <h3>Khách hàng đã mua gói</h3>
-                    <div class="customer-cards">
-                        {% for customer in active_purchased_customers %}
-                            <div class="customer-card">
-                                <div class="card-header">
-                                    {% if customer.profile_image %}
-                                        <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
-                                    {% else %}
-                                        <div class="customer-avatar-placeholder">{{ customer.full_name|first }}</div>
-                                    {% endif %}
-                                    <div class="customer-name">{{ customer.full_name }}</div>
+                
+                <div class="col-md-4">
+                    <div class="customer-column mb-4">
+                        <h3>Khách không đến tập thử ({{ no_trial_customers|length }})</h3>
+                        <div class="customer-cards">
+                            {% for customer in no_trial_customers %}
+                                <div class="customer-card">
+                                    <div class="card-header">
+                                        {% if customer.profile_image %}
+                                            <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+                                        {% else %}
+                                            <div class="customer-avatar-placeholder">{{ customer.full_name|first }}</div>
+                                        {% endif %}
+                                        <div class="customer-name">{{ customer.full_name }}</div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+                                        <p><i class="fas fa-envelope"></i> {{ customer.email|default:"Chưa có email" }}</p>
+                                        <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date|date:"d/m/Y" }}</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <a href="{% url 'dashboard:customer_detail' customer.id %}" class="btn btn-sm btn-info">Chi tiết</a>
+                                        <a href="{% url 'dashboard:customer_edit' customer.id %}" class="btn btn-sm btn-warning">Cập nhật</a>
+                                    </div>
                                 </div>
-                                <div class="card-body">
-                                    <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
-                                    <p><i class="fas fa-envelope"></i> {{ customer.email|default:"Chưa có email" }}</p>
-                                    <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date|date:"d/m/Y" }}</p>
+                            {% empty %}
+                                <div class="alert alert-info">Không có khách hàng ở trạng thái này</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="customer-column mb-4">
+                        <h3>Khách không mua hàng ({{ no_purchase_customers|length }})</h3>
+                        <div class="customer-cards">
+                            {% for customer in no_purchase_customers %}
+                                <div class="customer-card">
+                                    <div class="card-header">
+                                        {% if customer.profile_image %}
+                                            <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+                                        {% else %}
+                                            <div class="customer-avatar-placeholder">{{ customer.full_name|first }}</div>
+                                        {% endif %}
+                                        <div class="customer-name">{{ customer.full_name }}</div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+                                        <p><i class="fas fa-envelope"></i> {{ customer.email|default:"Chưa có email" }}</p>
+                                        <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date|date:"d/m/Y" }}</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <a href="{% url 'dashboard:customer_detail' customer.id %}" class="btn btn-sm btn-info">Chi tiết</a>
+                                        <a href="{% url 'dashboard:customer_edit' customer.id %}" class="btn btn-sm btn-warning">Cập nhật</a>
+                                    </div>
                                 </div>
-                                <div class="card-footer">
-                                    <a href="{% url 'dashboard:customer_detail' customer.id %}" class="btn btn-sm btn-info">Chi tiết</a>
-                                    <a href="{% url 'dashboard:customer_edit' customer.id %}" class="btn btn-sm btn-warning">Cập nhật</a>
+                            {% empty %}
+                                <div class="alert alert-info">Không có khách hàng ở trạng thái này</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="customer-column mb-4">
+                        <h3>Khách không tái mua ({{ no_repurchase_customers|length }})</h3>
+                        <div class="customer-cards">
+                            {% for customer in no_repurchase_customers %}
+                                <div class="customer-card">
+                                    <div class="card-header">
+                                        {% if customer.profile_image %}
+                                            <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+                                        {% else %}
+                                            <div class="customer-avatar-placeholder">{{ customer.full_name|first }}</div>
+                                        {% endif %}
+                                        <div class="customer-name">{{ customer.full_name }}</div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+                                        <p><i class="fas fa-envelope"></i> {{ customer.email|default:"Chưa có email" }}</p>
+                                        <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date|date:"d/m/Y" }}</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <a href="{% url 'dashboard:customer_detail' customer.id %}" class="btn btn-sm btn-info">Chi tiết</a>
+                                        <a href="{% url 'dashboard:customer_edit' customer.id %}" class="btn btn-sm btn-warning">Cập nhật</a>
+                                    </div>
                                 </div>
-                            </div>
-                        {% empty %}
-                            <div class="alert alert-info">Không có khách hàng đã mua gói</div>
-                        {% endfor %}
+                            {% empty %}
+                                <div class="alert alert-info">Không có khách hàng ở trạng thái này</div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>

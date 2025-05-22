@@ -9,7 +9,7 @@ class CustomerForm(forms.ModelForm):
             'status', 'source',
             'date_of_birth', 'gender', 'profile_image', 'notes',
             'emergency_contact', 'health_issues',
-            'parent_name', 'parent_phone', 'active',
+            'parent', 'parent_name', 'parent_phone', 'active',
         ]
         widgets = {
             'date_of_birth': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
@@ -23,6 +23,7 @@ class CustomerForm(forms.ModelForm):
             'profile_image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'emergency_contact': forms.TextInput(attrs={'class': 'form-control'}),
             'health_issues': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'parent': forms.Select(attrs={'class': 'form-select'}),
             'parent_name': forms.TextInput(attrs={'class': 'form-control'}),
             'parent_phone': forms.TextInput(attrs={'class': 'form-control'}),
             'active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),

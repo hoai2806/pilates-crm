@@ -1,0 +1,37 @@
+<label for="parent_autocomplete">Tìm kiếm phụ huynh (bố/mẹ) theo tên hoặc số điện thoại</label>
+<input type="text" id="parent_autocomplete" class="form-control" autocomplete="off" placeholder="Nhập tên hoặc số điện thoại phụ huynh...">
+<div id="parent_suggestions" class="list-group" style="position: absolute; z-index: 1000;"></div>
+<input type="hidden" name="parent_id" id="parent_id">
+
+<script>
+$('#parent_autocomplete').on('input', function() {
+    var query = $(this).val();
+    if (query.length < 2) {
+        $('#parent_suggestions').empty();
+        return;
+    }
+    $.ajax({
+        url: '/dashboard/search_customers/',
+        data: { q: query },
+        success: function(data) {
+            var html = '';
+            data.results.forEach(function(item) {
+                html += '<a href="#" class="list-group-item list-group-item-action" data-id="'+item.id+'" data-name="'+item.name+'" data-phone="'+item.phone+'">'+item.name+' - '+item.phone+'</a>';
+            });
+            $('#parent_suggestions').html(html).show();
+        }
+    });
+});
+
+$('#parent_suggestions').on('click', 'a', function(e) {
+    e.preventDefault();
+    $('#parent_autocomplete').val($(this).data('name') + ' - ' + $(this).data('phone'));
+    $('#parent_id').val($(this).data('id'));
+    $('#parent_suggestions').empty();
+});
+$(document).on('click', function(e) {
+    if (!$(e.target).closest('#parent_autocomplete, #parent_suggestions').length) {
+        $('#parent_suggestions').empty();
+    }
+});
+</script> 

@@ -201,22 +201,13 @@
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-12">
-                        <div class="form-group">
-                            <label for="health_notes">Ghi chú về sức khỏe</label>
-                            <textarea class="form-control" id="health_notes" name="health_notes" rows="3"></textarea>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Avatar upload -->
                 <div class="row">
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label for="profile_image">Ảnh đại diện</label>
-                            <div class="avatar-preview">
-                                <img id="avatar-preview-img" src="{% static 'img/default-avatar.png' %}" alt="Ảnh đại diện">
+                            <div class="avatar-preview" style="width: 150px; height: 150px; border-radius: 50%; overflow: hidden; margin-bottom: 10px; border: 1px solid #ddd;">
+                                <img id="avatar-preview-img" src="{% static 'img/default-avatar.png' %}" alt="Ảnh đại diện" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
                             <input type="file" class="form-control-file" id="profile_image" name="profile_image" accept="image/*" onchange="previewAvatar(this)">
                         </div>
@@ -256,9 +247,30 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="notes">Ghi chú</label>
-                    <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                <!-- Thông tin phụ huynh -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Thông tin phụ huynh (nếu có)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tìm kiếm phụ huynh (bố/mẹ) theo tên hoặc số điện thoại</label>
+                            <select class="form-select select2-customer" name="parent" style="width: 100%">
+                                <option value="">-- Chọn phụ huynh --</option>
+                            </select>
+                            <small class="form-text text-muted">Tìm kiếm tên hoặc số điện thoại phụ huynh...</small>
+                        </div>
+                        <div id="parent-info-fields">
+                            <div class="mb-3">
+                                <label class="form-label">Họ và tên phụ huynh</label>
+                                <input type="text" class="form-control" name="parent_name" id="parent_name">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Số điện thoại phụ huynh</label>
+                                <input type="text" class="form-control" name="parent_phone" id="parent_phone">
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary">Lưu khách hàng</button>
@@ -502,5 +514,122 @@
             this.appendChild(countInput);
         }
     });
+</script>
+
+<script>
+$(document).ready(function() {
+    // Xử lý tìm kiếm phụ huynh bằng input text autocomplete
+    $('#parent_autocomplete').on('input', function() {
+        var query = $(this).val();
+        if (query.length < 2) {
+            $('#parent_suggestions').empty().hide();
+            $('#parent_id').val('');
+            $('#parent_name').val('');
+            $('#parent_phone').val('');
+            $('#parent-info-fields').hide();
+            return;
+        }
+        
+        // Hiển thị thông báo đang tìm kiếm
+        $('#parent_suggestions').html('<div class="list-group-item text-center"><i class="fas fa-spinner fa-spin"></i> Đang tìm kiếm...</div>').show();
+        
+        $.ajax({
+            url: '/hdcrm/api/search-customers/',
+            data: { q: query },
+            dataType: 'json',
+            success: function(data) {
+                console.log("Kết quả nhận được:", data);
+                var html = '';
+                if (!data.results || data.results.length === 0) {
+                    html = '<div class="list-group-item">Không tìm thấy kết quả</div>';
+                } else {
+                    data.results.forEach(function(item) {
+                        html += '<a href="#" class="list-group-item list-group-item-action parent-item" ' +
+                                'data-id="' + item.id + '" ' +
+                                'data-name="' + item.name + '" ' +
+                                'data-phone="' + item.phone + '">' +
+                                item.text +
+                                '</a>';
+                    });
+                }
+                $('#parent_suggestions').html(html).show();
+            },
+            error: function(xhr, status, error) {
+                console.error("Lỗi AJAX:", error, xhr.responseText);
+                $('#parent_suggestions').html('<div class="list-group-item text-danger">Có lỗi xảy ra: ' + error + '</div>').show();
+            }
+        });
+    });
+
+    // Xử lý khi chọn phụ huynh từ kết quả tìm kiếm
+    $(document).on('click', '.parent-item', function(e) {
+        e.preventDefault();
+        var id = $(this).data('id');
+        var name = $(this).data('name');
+        var phone = $(this).data('phone');
+        
+        console.log("Đã chọn phụ huynh:", id, name, phone);
+        
+        // Cập nhật input tìm kiếm và input ẩn
+        $('#parent_autocomplete').val($(this).text());
+        $('#parent_id').val(id);
+        
+        // Cập nhật thông tin phụ huynh
+        $('#parent_name').val(name);
+        $('#parent_phone').val(phone);
+        $('#parent-info-fields').show();
+        
+        // Đóng kết quả tìm kiếm
+        $('#parent_suggestions').empty().hide();
+    });
+    
+    // Đóng kết quả tìm kiếm khi click ra ngoài
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#parent_autocomplete, #parent_suggestions').length) {
+            $('#parent_suggestions').empty().hide();
+        }
+    });
+    
+    // Ẩn mặc định khi load trang
+    $('#parent-info-fields').hide();
+});
+</script>
+
+<script>
+$('.select2-customer').select2({
+    placeholder: 'Tìm kiếm tên hoặc số điện thoại phụ huynh...',
+    allowClear: true,
+    ajax: {
+        url: '/hdcrm/api/search-customers/',
+        dataType: 'json',
+        delay: 250,
+        data: function(params) {
+            return {
+                q: params.term
+            };
+        },
+        processResults: function(data) {
+            console.log("Dữ liệu nhận được từ API:", data);
+            return {
+                results: data.results
+            };
+        },
+        cache: true
+    },
+    minimumInputLength: 2
+}).on('select2:select', function(e) {
+    var data = e.params.data;
+    console.log("Đã chọn phụ huynh:", data);
+    
+    // Hiển thị thông tin phụ huynh
+    $('#parent_name').val(data.name);
+    $('#parent_phone').val(data.phone);
+    $('#parent-info-fields').show();
+}).on('select2:clear', function() {
+    // Xóa thông tin và ẩn fields khi clear select
+    $('#parent_name').val('');
+    $('#parent_phone').val('');
+    $('#parent-info-fields').hide();
+});
 </script>
 {% endblock %}

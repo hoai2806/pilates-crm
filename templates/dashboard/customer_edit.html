@@ -98,12 +98,22 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
+                            <label class="form-label">Tìm kiếm bố/mẹ</label>
+                            <select class="form-select select2-customer" name="parent" style="width: 100%">
+                                <option value="">-- Chọn bố/mẹ --</option>
+                                {% if customer.parent %}
+                                <option value="{{ customer.parent.id }}" selected>{{ customer.parent.full_name }} - {{ customer.parent.phone }}</option>
+                                {% endif %}
+                            </select>
+                            <small class="form-text text-muted">Tìm kiếm theo tên hoặc số điện thoại của bố/mẹ</small>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label">Họ và tên phụ huynh</label>
-                            <input type="text" class="form-control" name="parent_name" value="{{ customer.parent_name|default:'' }}">
+                            <input type="text" class="form-control" name="parent_name" id="parent_name" value="{% if customer.parent %}{{ customer.parent.full_name }}{% else %}{{ customer.parent_name|default:'' }}{% endif %}" readonly>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Số điện thoại phụ huynh</label>
-                            <input type="text" class="form-control" name="parent_phone" value="{{ customer.parent_phone|default:'' }}">
+                            <input type="text" class="form-control" name="parent_phone" id="parent_phone" value="{% if customer.parent %}{{ customer.parent.phone }}{% else %}{{ customer.parent_phone|default:'' }}{% endif %}" readonly>
                         </div>
                     </div>
                 </div>
@@ -191,34 +201,6 @@
                             <textarea class="form-control" name="health_documents_description"></textarea>
                         </div>
                         
-                        <div class="row mb-3">
-                            <!-- Liên kết với thanh toán -->
-                            <div class="col-md-6">
-                                <label class="form-label">Liên kết với đơn thanh toán</label>
-                                <select class="form-select" name="health_doc_payment">
-                                    <option value="">-- Không liên kết --</option>
-                                    {% for payment in payments %}
-                                    <option value="{{ payment.id }}">
-                                        {{ payment.payment_date|date:"d/m/Y" }} - {{ payment.amount|floatformat:0 }} VNĐ
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            
-                            <!-- Liên kết với điểm danh -->
-                            <div class="col-md-6">
-                                <label class="form-label">Liên kết với buổi tập</label>
-                                <select class="form-select" name="health_doc_attendance">
-                                    <option value="">-- Không liên kết --</option>
-                                    {% for attendance in attendances %}
-                                    <option value="{{ attendance.id }}">
-                                        {{ attendance.class_session.get_date_display }} - {{ attendance.class_session.class_type.name }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        
                         <!-- Danh sách tài liệu hiện có -->
                         <div class="mt-4">
                             <h6>Tài liệu hiện có</h6>
@@ -276,4 +258,43 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('.select2-customer').select2({
+        placeholder: 'Tìm kiếm theo tên hoặc số điện thoại...',
+        allowClear: true,
+        ajax: {
+            url: '{% url "dashboard:search_customers" %}',
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function(data) {
+                return {
+                    results: data.results
+                };
+            },
+            cache: true
+        },
+        minimumInputLength: 2
+    });
+
+    $('.select2-customer').on('select2:select', function(e) {
+        var data = e.params.data;
+        $('#parent_name').val(data.name);
+        $('#parent_phone').val(data.phone);
+    });
+
+    $('.select2-customer').on('select2:clear', function() {
+        $('#parent_name').val('');
+        $('#parent_phone').val('');
+    });
+});
+</script>
 {% endblock %} 

@@ -143,9 +143,12 @@
                     <div><i class="fas fa-user text-muted me-2"></i>Giới tính: {{ customer.get_gender_display|default:'Chưa xác định' }}</div>
                 </div>
                 
-                {% if customer.parent_name or customer.parent_phone %}
+                {% if customer.parent or customer.parent_name or customer.parent_phone %}
                 <div class="customer-info-section">
                     <h6 class="text-muted">Thông tin phụ huynh</h6>
+                    {% if customer.parent %}
+                    <div><i class="fas fa-user text-muted me-2"></i>Bố/mẹ: <a href="{% url 'dashboard:customer_detail' customer.parent.id %}">{{ customer.parent.full_name }}</a></div>
+                    {% endif %}
                     {% if customer.parent_name %}<div><i class="fas fa-user text-muted me-2"></i>{{ customer.parent_name }}</div>{% endif %}
                     {% if customer.parent_phone %}<div><i class="fas fa-phone text-muted me-2"></i>{{ customer.parent_phone }}</div>{% endif %}
                 </div>
@@ -309,6 +312,37 @@
                             </tr>
                             {% empty %}
                             <tr><td colspan="6" class="text-center">Chưa có lịch sử điểm danh</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Cuộc hẹn liên quan -->
+            <div class="card p-4 mb-4">
+                <h5 class="mb-3"><i class="fas fa-calendar-alt me-2"></i>Cuộc hẹn liên quan</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Ngày giờ hẹn</th>
+                                <th>Huấn luyện viên</th>
+                                <th>Nội dung</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in customer.appointments.all %}
+                            <tr>
+                                <td>{{ appointment.appointment_date|date:'d/m/Y H:i' }}</td>
+                                <td>
+                                    {% for instructor in appointment.instructors.all %}
+                                        {{ instructor.full_name }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}N/A{% endfor %}
+                                </td>
+                                <td>{{ appointment.content|default:'-' }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-center">Chưa có cuộc hẹn nào</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>

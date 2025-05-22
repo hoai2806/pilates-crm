@@ -101,6 +101,7 @@ class Customer(models.Model):
     active = models.BooleanField(default=True, verbose_name="Đang hoạt động")
     
     # Thêm trường mới
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children', verbose_name="Bố/mẹ")
     parent_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Họ và tên bố/mẹ (nếu có)")
     parent_phone = models.CharField(max_length=15, blank=True, null=True, verbose_name="Số điện thoại bố/mẹ")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='contact', verbose_name="Trạng thái khách hàng")

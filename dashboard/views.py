@@ -37,14 +37,14 @@ def customer_dashboard(request):
         except ValueError:
             pass
     
-    # Lấy tất cả khách hàng theo trạng thái
-    contact_customers = Customer.objects.filter(status='contact', **filter_params).order_by('-registration_date')
-    trial_customers = Customer.objects.filter(status='trial', **filter_params).order_by('-registration_date')
-    purchased_customers = Customer.objects.filter(status='purchased', **filter_params).order_by('-registration_date')
-    repurchased_customers = Customer.objects.filter(status='repurchased', **filter_params).order_by('-registration_date')
-    no_trial_customers = Customer.objects.filter(status='no_trial', **filter_params).order_by('-registration_date')
-    no_purchase_customers = Customer.objects.filter(status='no_purchase', **filter_params).order_by('-registration_date')
-    no_repurchase_customers = Customer.objects.filter(status='no_repurchase', **filter_params).order_by('-registration_date')
+    # Lấy tất cả khách hàng theo trạng thái thực
+    contact_customers = list(Customer.objects.filter(status='contact', **filter_params).order_by('-registration_date')[:10])
+    trial_customers = list(Customer.objects.filter(status='trial', **filter_params).order_by('-registration_date')[:10])
+    purchased_customers = list(Customer.objects.filter(status='purchased', **filter_params).order_by('-registration_date')[:10])
+    repurchased_customers = list(Customer.objects.filter(status='repurchased', **filter_params).order_by('-registration_date')[:10])
+    no_trial_customers = list(Customer.objects.filter(status='no_trial', **filter_params).order_by('-registration_date')[:10])
+    no_purchase_customers = list(Customer.objects.filter(status='no_purchase', **filter_params).order_by('-registration_date')[:10])
+    no_repurchase_customers = list(Customer.objects.filter(status='no_repurchase', **filter_params).order_by('-registration_date')[:10])
     
     # Thống kê số lượng khách hàng theo trạng thái
     customer_stats = Customer.objects.filter(**filter_params).values('status').annotate(count=Count('id'))
@@ -56,14 +56,27 @@ def customer_dashboard(request):
     this_month_start = today.replace(day=1)
     this_year_start = today.replace(month=1, day=1)
     
+    # Tính toán các số liệu tổng hợp
+    total_customers = Customer.objects.count()
+    active_customers = Customer.objects.filter(active=True).count()
+    purchased_count = Customer.objects.filter(status__in=['purchased', 'repurchased']).count()
+    new_customers_this_month = Customer.objects.filter(registration_date__gte=this_month_start).count()
+    
     context = {
-        'contact_customers': contact_customers,
-        'trial_customers': trial_customers,
-        'purchased_customers': purchased_customers,
-        'repurchased_customers': repurchased_customers,
-        'no_trial_customers': no_trial_customers,
-        'no_purchase_customers': no_purchase_customers,
-        'no_repurchase_customers': no_repurchase_customers,
+        'total_customers': total_customers,
+        'active_customers': active_customers,
+        'purchased_customers_count': purchased_count,
+        'new_customers_this_month': new_customers_this_month,
+        
+        # Danh sách khách hàng theo trạng thái thực
+        'contact_customers': contact_customers,           # Khách hàng liên hệ
+        'trial_customers': trial_customers,               # Khách hàng tập thử
+        'purchased_customers': purchased_customers,       # Khách hàng đã mua
+        'repurchased_customers': repurchased_customers,   # Khách hàng tái mua
+        'no_trial_customers': no_trial_customers,         # Khách hàng không đến tập thử
+        'no_purchase_customers': no_purchase_customers,   # Khách hàng không mua hàng
+        'no_repurchase_customers': no_repurchase_customers, # Khách hàng không tái mua
+        
         'stats': stats_dict,
         'start_date': start_date,
         'end_date': end_date,
@@ -116,6 +129,7 @@ def customer_edit_view(request, pk):
         customer.emergency_contact = request.POST.get('emergency_contact')
         customer.health_issues = request.POST.get('health_issues')
         customer.notes = request.POST.get('notes')
+        customer.parent_id = request.POST.get('parent')
         customer.parent_name = request.POST.get('parent_name')
         customer.parent_phone = request.POST.get('parent_phone')
         customer.status = request.POST.get('status')
@@ -872,6 +886,7 @@ def customer_add_view(request):
         notes = request.POST.get('notes')
         status = request.POST.get('status', 'contact')  # Mặc định là 'contact'
         gender = request.POST.get('gender', 'M')  # Mặc định là Nam
+        parent_id = request.POST.get('parent')
         parent_name = request.POST.get('parent_name')
         parent_phone = request.POST.get('parent_phone')
         emergency_contact = request.POST.get('emergency_contact')
@@ -887,6 +902,7 @@ def customer_add_view(request):
             notes=notes,
             status=status,
             gender=gender,
+            parent_id=parent_id,
             parent_name=parent_name,
             parent_phone=parent_phone,
             emergency_contact=emergency_contact,
@@ -907,59 +923,12 @@ def customer_add_view(request):
             except ValueError:
                 pass
         
-        # Xử lý ảnh đại diện
-        if 'profile_image' in request.FILES:
-            profile_image = request.FILES['profile_image']
-            customer.profile_image = profile_image
-                
-        # Lưu khách hàng
         customer.save()
-        
-        # Xử lý tài liệu sức khỏe
-        health_docs_count = int(request.POST.get('health_docs_count', 0))
-        
-        for i in range(health_docs_count):
-            file_key = f'health_doc_{i}'
-            type_key = f'health_doc_type_{i}'
-            desc_key = f'health_doc_description_{i}'
-            
-            if file_key in request.FILES:
-                health_file = request.FILES[file_key]
-                document_type = request.POST.get(type_key, 'other')
-                description = request.POST.get(desc_key, '')
-                
-                # Xác định loại tài liệu dựa trên loại file
-                if document_type not in ['image', 'video', 'pdf', 'other']:
-                    if health_file.content_type.startswith('image/'):
-                        document_type = 'image'
-                    elif health_file.content_type.startswith('video/'):
-                        document_type = 'video'
-                    elif health_file.content_type == 'application/pdf':
-                        document_type = 'pdf'
-                    else:
-                        document_type = 'other'
-                
-                health_doc = HealthDocument(
-                    customer=customer,
-                    file=health_file,
-                    document_type=document_type,
-                    description=description
-                )
-                health_doc.save()
-        
-        # Trả về JSON response cho Ajax request
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'redirect_url': reverse('dashboard:customer_detail', args=[customer.id])
-            })
-        
-        # Redirect đến trang chi tiết khách hàng
-        return redirect('dashboard:customer_detail', pk=customer.pk)
+        return redirect('dashboard:customer_detail', pk=customer.id)
     
-    # GET request, hiển thị form
     return render(request, 'dashboard/customer_add.html', {
-        'branches': branches
+        'branches': branches,
+        'customers': Customer.objects.filter(active=True),  # Thêm danh sách khách hàng để chọn làm bố/mẹ
     })
 
 @login_required
@@ -1123,3 +1092,34 @@ def search_customers_api(request):
         })
     
     return JsonResponse(results, safe=False)
+
+@login_required
+def search_customers(request):
+    query = request.GET.get('q', '')
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+    
+    print(f"Tìm kiếm khách hàng với query: {query}")
+    
+    customers = Customer.objects.filter(
+        Q(full_name__icontains=query) | 
+        Q(phone__icontains=query)
+    ).filter(active=True)[:10]
+    
+    print(f"Tìm thấy {customers.count()} khách hàng")
+    
+    results = []
+    for c in customers:
+        # Kết quả hiển thị cho select2
+        customer_data = {
+            'id': c.id,
+            'text': f"{c.full_name} - {c.phone or 'Không có SĐT'}",
+            # Thông tin để điền vào form
+            'name': c.full_name,
+            'phone': c.phone or ''
+        }
+        results.append(customer_data)
+    
+    print(f"Kết quả trả về: {results}")
+    
+    return JsonResponse({'results': results})
