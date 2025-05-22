@@ -1,0 +1,653 @@
+/* Custom CSS cho Django Admin - Pilates Studio */
+
+:root {
+    --primary: #6658dd; /* Màu chính của Reback */
+    --primary-light: #837ae9; /* Màu chính nhạt hơn */
+    --secondary: #e58ab2; /* Màu hồng từ logo */
+    --light-bg: #f8f9fa; /* Nền sáng */
+    --card-bg: #ffffff; /* Nền thẻ */
+    --dark-text: #323a46; /* Màu chữ tối */
+    --light-text: #8391a2; /* Màu chữ nhạt */
+    --border-color: #e1e7ec; /* Màu viền */
+    --table-header-bg: #f6f8fa; /* Màu nền header bảng */
+    --hover-bg: #f1f3fa; /* Màu nền khi hover */
+    --success: #1abc9c; /* Màu thành công */
+    --danger: #f1556c; /* Màu cảnh báo */
+    --warning: #f7b84b; /* Màu cảnh báo nhẹ */
+    --info: #4fc6e1; /* Màu thông tin */
+    --border-radius: 4px; /* Bo góc */
+    --box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.05); /* Đổ bóng */
+    --transition-speed: 0.2s; /* Tốc độ chuyển đổi */
+}
+
+/* Ẩn các nút "Thêm vào" và "Thay đổi" trên trang admin */
+.addlink, a[href*="add/"] {
+    display: none !important;
+}
+
+a[title="Thay đổi"], 
+.changelink, 
+a.inline-deletelink,
+a[href*="change/"] {
+    display: none !important;
+}
+
+/* Ẩn nút thêm mới trên breadcrumb */
+ul.object-tools li a.addlink {
+    display: none !important;
+}
+
+/* Ẩn icon trong column thực hiện */
+td.field-_edit a, 
+td.field-_delete a {
+    display: none !important;
+}
+
+/* Style toàn cục */
+body {
+    font-family: 'Inter', 'Nunito', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--light-bg);
+    color: var(--dark-text);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Header chính */
+#header {
+    background: linear-gradient(to right, var(--primary), var(--primary-light));
+    color: #fff;
+    box-shadow: var(--box-shadow);
+    padding: 15px 0;
+    height: auto;
+    line-height: normal;
+    border-bottom: none;
+}
+
+#branding h1 {
+    margin: 0;
+    padding: 10px 15px;
+    font-weight: 600;
+    font-size: 1.3rem;
+}
+
+#branding h1 a {
+    color: #fff;
+    text-decoration: none;
+    transition: color var(--transition-speed);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+#branding h1 a:hover {
+    color: #fff;
+    opacity: 0.9;
+}
+
+/* Sidebar cải tiến */
+#nav-sidebar {
+    background-color: var(--card-bg);
+    box-shadow: var(--box-shadow);
+    border-right: 1px solid var(--border-color);
+    padding-top: 15px;
+}
+
+.module h2, .module caption, .inline-group h2 {
+    background-color: var(--primary);
+    color: #fff;
+    margin: 0;
+    padding: 12px 15px;
+    font-weight: 600;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    border: none;
+}
+
+.dashboard .module table th {
+    background-color: var(--table-header-bg);
+    color: var(--dark-text);
+    font-weight: 600;
+    border: none;
+}
+
+/* Nút đẹp hơn */
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+    background-color: var(--primary);
+    border: none;
+    border-radius: var(--border-radius);
+    color: #fff;
+    padding: 10px 15px;
+    font-weight: 500;
+    transition: background-color var(--transition-speed), transform var(--transition-speed);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover, a.button:hover {
+    background-color: var(--primary-light);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.button.default, input[type=submit].default, .submit-row input.default {
+    background-color: var(--secondary);
+    font-weight: 600;
+}
+
+.button.default:hover, input[type=submit].default:hover, .submit-row input.default:hover {
+    background-color: #d580a8; /* Phiên bản đậm của secondary */
+}
+
+/* Form styling hiện đại */
+.form-row {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.form-row label {
+    font-weight: 500;
+    color: var(--dark-text);
+}
+
+input[type="text"], 
+input[type="password"], 
+input[type="email"], 
+input[type="url"], 
+input[type="number"], 
+input[type="tel"], 
+textarea, 
+select, 
+.vTextField {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 8px 12px;
+    background-color: #fff;
+    color: var(--dark-text);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+input[type="text"]:focus, 
+input[type="password"]:focus, 
+input[type="email"]:focus, 
+input[type="url"]:focus, 
+input[type="number"]:focus, 
+input[type="tel"]:focus, 
+textarea:focus, 
+select:focus, 
+.vTextField:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 88, 221, 0.2);
+    outline: none;
+}
+
+/* Cải thiện bảng dữ liệu */
+#changelist table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+    background-color: white;
+    margin-bottom: 20px;
+    width: 100%;
+    border: none;
+}
+
+#changelist table thead th {
+    background-color: var(--table-header-bg);
+    padding: 12px 15px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--dark-text);
+    text-align: left;
+}
+
+#changelist table tbody tr {
+    transition: background-color var(--transition-speed);
+    background-color: white;
+    border: none;
+}
+
+#changelist table tbody tr:nth-child(odd) {
+    background-color: var(--light-bg);
+}
+
+#changelist table tbody tr:hover {
+    background-color: var(--hover-bg);
+}
+
+#changelist table tbody td {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--dark-text);
+    vertical-align: middle;
+}
+
+#changelist .paginator {
+    background-color: var(--light-bg);
+    border: none;
+    padding: 12px 15px;
+    font-size: 0.9rem;
+    margin: 15px 0;
+    color: var(--dark-text);
+    border-radius: var(--border-radius);
+}
+
+/* Menu styling cải tiến */
+.app-auth .app-icons, .app-models .app-icons {
+    color: var(--primary);
+}
+
+#nav-sidebar .nav-item a {
+    color: var(--dark-text);
+    font-weight: 500;
+    padding: 10px 15px;
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+    border-radius: 0;
+}
+
+#nav-sidebar .nav-item a:hover {
+    background-color: var(--hover-bg);
+    color: var(--primary);
+}
+
+#nav-sidebar .nav-item.active a {
+    background-color: var(--primary);
+    color: #fff;
+}
+
+/* Breadcrumbs */
+div.breadcrumbs {
+    background: var(--light-bg);
+    color: var(--dark-text);
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: none;
+}
+
+div.breadcrumbs a {
+    color: var(--primary);
+    transition: color var(--transition-speed);
+}
+
+div.breadcrumbs a:hover {
+    color: var(--primary-light);
+}
+
+/* Content chính */
+#content {
+    background: #fff;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin: 20px;
+    padding: 25px;
+}
+
+#content h1 {
+    font-weight: 600;
+    color: var(--dark-text);
+    margin-bottom: 25px;
+    font-size: 1.8rem;
+}
+
+/* Đảm bảo giao diện sáng cho tất cả bảng */
+table {
+    background-color: white !important;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    width: 100%;
+    margin-bottom: 15px;
+    box-shadow: var(--box-shadow);
+    border: none !important;
+}
+
+table thead th {
+    background-color: var(--table-header-bg) !important;
+    color: var(--dark-text) !important;
+    font-weight: 600;
+    padding: 12px 15px;
+    border: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    text-align: left;
+}
+
+table tbody tr {
+    background-color: white !important;
+    transition: background-color var(--transition-speed);
+}
+
+table tbody tr:nth-child(odd) {
+    background-color: var(--light-bg) !important;
+}
+
+table tbody tr:hover {
+    background-color: var(--hover-bg) !important;
+}
+
+table td, table th {
+    padding: 12px 15px !important;
+    vertical-align: middle !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    color: var(--dark-text) !important;
+}
+
+table a {
+    color: var(--primary) !important;
+    text-decoration: none;
+    transition: color var(--transition-speed);
+}
+
+table a:hover {
+    color: var(--primary-light) !important;
+    text-decoration: underline;
+}
+
+/* Tùy chỉnh cụ thể cho app branches, customers và classes */
+.app-branches table,
+.app-customers table,
+.app-classes table {
+    background-color: white !important;
+    box-shadow: var(--box-shadow) !important;
+}
+
+.app-branches th,
+.app-customers th,
+.app-classes th {
+    background-color: var(--table-header-bg) !important;
+}
+
+.app-branches td,
+.app-customers td,
+.app-classes td {
+    background-color: transparent !important;
+}
+
+/* Làm sáng phần hoạt động */
+.actions {
+    background-color: white !important;
+    padding: 15px !important;
+    border-radius: var(--border-radius) !important;
+    box-shadow: var(--box-shadow) !important;
+    margin: 15px 0 !important;
+}
+
+.action-counter {
+    color: var(--dark-text) !important;
+}
+
+/* Làm sáng phần tìm kiếm */
+#toolbar, 
+#changelist-search, 
+.search-container {
+    background-color: white !important;
+    padding: 15px !important;
+    border-radius: var(--border-radius) !important;
+    box-shadow: var(--box-shadow) !important;
+    margin-bottom: 15px !important;
+}
+
+#changelist-search input,
+.search-container input, 
+#searchbar {
+    border-radius: var(--border-radius) !important;
+    border: 1px solid var(--border-color) !important;
+    padding: 8px 12px !important;
+    color: var(--dark-text) !important;
+    background-color: white !important;
+}
+
+/* Custom scrollbar hiện đại */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-light);
+}
+
+/* Sửa bảng tại trang chi nhánh */
+.app-branches #result_list,
+.app-customers #result_list,
+.app-classes #result_list {
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+    background-color: white;
+    border: none;
+}
+
+/* Sửa lỗi màu nền khi xem chi tiết từng dòng */
+tr.row1,
+tr.row2 {
+    background-color: white !important;
+}
+
+tr.row1:hover, 
+tr.row2:hover {
+    background-color: var(--hover-bg) !important;
+}
+
+/* Đảm bảo các nút hành động đều đẹp */
+.object-tools {
+    margin-top: 15px;
+}
+
+.object-tools a {
+    background-color: var(--primary);
+    border-radius: var(--border-radius);
+    padding: 8px 12px;
+    color: white !important;
+    font-weight: 500;
+    transition: background-color var(--transition-speed), transform var(--transition-speed);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.object-tools a:hover {
+    background-color: var(--primary-light);
+    transform: translateY(-1px);
+}
+
+/* Responsive cải tiến */
+@media (max-width: 1024px) {
+    #content {
+        margin: 10px;
+        padding: 15px;
+    }
+    
+    table td, table th {
+        padding: 10px !important;
+    }
+}
+
+/* Đảm bảo tất cả các màn nền đều sáng */
+*, *::before, *::after {
+    box-shadow: none !important;
+}
+
+body, html, #container, #changelist, #content-main {
+    background-color: var(--light-bg) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--dark-text) !important;
+}
+
+/* Bỏ gạch chân cho các link */
+a {
+    text-decoration: none;
+}
+
+/* Chỉnh các kiểu cho nút */
+button {
+    border-radius: var(--border-radius) !important;
+    border: none !important;
+    box-shadow: var(--box-shadow) !important;
+}
+
+/* Đảm bảo màu sắc cho các phần tử khác */
+.messagelist {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin: 15px 0;
+    padding: 0;
+}
+
+.messagelist li {
+    padding: 12px 15px;
+    border-radius: var(--border-radius);
+    margin: 0;
+}
+
+.messagelist li.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-left: 4px solid var(--success);
+}
+
+.messagelist li.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border-left: 4px solid var(--danger);
+}
+
+.messagelist li.warning {
+    background-color: #fff8e1;
+    color: #f57f17;
+    border-left: 4px solid var(--warning);
+}
+
+.messagelist li.info {
+    background-color: #e3f2fd;
+    color: #1565c0;
+    border-left: 4px solid var(--info);
+}
+
+/* Filter sidebar */
+#changelist-filter {
+    display: none !important;
+}
+
+/* Tăng kích thước các phần nội dung chính khi đã ẩn bộ lọc */
+#changelist-form {
+    width: 100% !important;
+    margin-right: 0 !important;
+}
+
+.change-list .filtered .results {
+    width: 100% !important;
+    margin-right: 0 !important;
+}
+
+/* CSS dành riêng cho phần lịch học */
+.calendar-info,
+.calendar-view .event-info,
+.calendar-view .user-info,
+.calendar-view .instructor-info,
+.calendar-view .customer-info,
+.calendar-view .personal-info,
+.event-details,
+.fc-event-title,
+.fc-event-content,
+.calendar-content div,
+.fc-content,
+.fc-list-item-title {
+    display: block !important;
+    color: var(--dark-text) !important;
+    background-color: transparent !important;
+}
+
+.calendar-popup {
+    display: block !important;
+    color: var(--dark-text) !important;
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    padding: 10px 15px !important;
+    border-radius: var(--border-radius) !important;
+    box-shadow: var(--box-shadow) !important;
+}
+
+/* Đảm bảo hiển thị nội dung trong lịch */
+.calendar-view td div,
+.fc-daygrid-event-harness,
+.fc-event,
+.fc-timegrid-event,
+.fc-list-event,
+.calendar-event {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Đặc biệt cho phần thông tin cá nhân trong lịch */
+.class-event-info,
+.instructor-name,
+.customer-name,
+.event-title,
+.event-time,
+.event-location,
+.event-description {
+    display: inline-block !important;
+    color: var(--dark-text) !important;
+    visibility: visible !important;
+    background-color: transparent !important;
+}
+
+/* Thêm quy tắc cho các container lịch phổ biến */
+#calendar, /* Common ID for calendar container */
+.fc, /* Main FullCalendar class */
+.fc-view-harness, /* Modern FullCalendar view harness */
+.fc-view-container, /* Older FullCalendar view container */
+.fc-view,
+.fc-dayGrid-view,
+.fc-timeGrid-view,
+.fc-list-view {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background-color: transparent !important;
+}
+
+/* Đảm bảo các phần tử event của FullCalendar hiển thị */
+.fc-event,
+.fc-event-main,
+.fc-event-main-frame,
+.fc-daygrid-event,
+.fc-timegrid-event,
+.fc-list-day-text-event { /* Cho list view events */
+    display: block !important; /* hoặc 'flex' tùy theo cấu trúc của theme */
+    opacity: 1 !important;
+    visibility: visible !important;
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    padding: 2px 4px !important;
+    border-radius: var(--border-radius) !important;
+}
+
+.fc-event-title,
+.fc-event-time {
+    color: var(--dark-text) !important; /* Đảm bảo màu chữ trong event là tối trên nền trắng */
+    opacity: 1 !important;
+    visibility: visible !important;
+    font-size: 0.85em !important;
+    white-space: normal !important;
+}
+
+/* Đảm bảo các ô ngày và khe thời gian có nền sáng */
+.fc .fc-daygrid-day-frame,
+.fc .fc-timegrid-slot-lane,
+.fc .fc-bg-event { /* fc-bg-event là các sự kiện nền */
+    background-color: var(--light-bg) !important; /* Nền sáng cho các ô lịch */
+} 

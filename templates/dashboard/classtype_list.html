@@ -1,0 +1,124 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Danh sách loại lớp học{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="m-0">Danh sách loại lớp học</h4>
+        </div>
+        <div class="card-body">
+            <div class="mb-3 text-right">
+                <a href="#" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Thêm loại lớp học mới
+                </a>
+            </div>
+            
+            <!-- Bộ lọc tìm kiếm -->
+            <div class="filter-bar mb-4">
+                <form method="get" class="filter-form">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="q" placeholder="Tìm kiếm loại lớp học..." value="{{ search_query }}">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i> Tìm kiếm
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            {% if class_types %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Tên lớp</th>
+                                <th>Loại</th>
+                                <th>Thời lượng</th>
+                                <th>Sức chứa</th>
+                                <th>Mức độ khó</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for class_type in class_types %}
+                                <tr>
+                                    <td>{{ class_type.name }}</td>
+                                    <td>{{ class_type.get_class_category_display }}</td>
+                                    <td>{{ class_type.duration }} phút</td>
+                                    <td>{{ class_type.max_capacity }} người</td>
+                                    <td>
+                                        <div class="difficulty-level">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= class_type.difficulty_level %}
+                                                    <i class="fas fa-star text-warning"></i>
+                                                {% else %}
+                                                    <i class="far fa-star text-muted"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> Xem
+                                        </a>
+                                        <a href="#" class="btn btn-sm btn-success">
+                                            <i class="fas fa-edit"></i> Sửa
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Phân trang -->
+                {% if class_types.has_other_pages %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if class_types.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ class_types.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">&laquo;</span>
+                            </li>
+                        {% endif %}
+                        
+                        {% for i in class_types.paginator.page_range %}
+                            {% if class_types.number == i %}
+                                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                            {% else %}
+                                <li class="page-item"><a class="page-link" href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ i }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if class_types.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ class_types.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">&raquo;</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    Không có loại lớp học nào trong hệ thống.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

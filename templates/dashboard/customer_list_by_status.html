@@ -1,0 +1,182 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Danh sách khách hàng - {{ status }}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      padding: 24px 32px;
+    }
+    h2 {
+      margin-bottom: 18px;
+      color: #417690;
+      font-size: 22px;
+    }
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 18px;
+      color: #417690;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 15px;
+    }
+    .back-btn i {
+      margin-right: 6px;
+    }
+    .filter-form {
+      margin-bottom: 18px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .filter-form label {
+      font-size: 14px;
+      color: #333;
+      margin-right: 4px;
+    }
+    .filter-form input[type="date"] {
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    .filter-form button {
+      background: #417690;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .filter-form button:hover {
+      background: #2c3e50;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      background: #f8f9fa;
+      color: #417690;
+      font-weight: 600;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    .action-btn {
+      background: #417690;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 12px;
+      font-size: 13px;
+      margin-right: 4px;
+      text-decoration: none;
+      transition: background 0.2s;
+      display: inline-block;
+    }
+    .action-btn:hover {
+      background: #2c3e50;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    .avatar-placeholder {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #417690;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      margin-right: 8px;
+    }
+    .empty-message {
+      color: #888;
+      text-align: center;
+      padding: 30px 0;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="{% url 'dashboard:customer_dashboard' %}" class="back-btn"><i class="fas fa-arrow-left"></i>Quay lại Dashboard</a>
+    <h2>Danh sách khách hàng trạng thái: <span style="text-transform:capitalize">{{ status }}</span></h2>
+    <form method="get" class="filter-form">
+      <label for="start_date">Từ ngày:</label>
+      <input type="date" id="start_date" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+      <label for="end_date">Đến ngày:</label>
+      <input type="date" id="end_date" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+      <button type="submit">Lọc</button>
+    </form>
+    {% if customers %}
+      <table>
+        <thead>
+          <tr>
+            <th>Họ tên</th>
+            <th>SĐT</th>
+            <th>Ngày đăng ký</th>
+            <th>Nguồn</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for customer in customers %}
+          <tr>
+            <td>
+              {% if customer.profile_image %}
+                <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="avatar">
+              {% else %}
+                <span class="avatar-placeholder">{{ customer.full_name|make_list|first }}</span>
+              {% endif %}
+              {{ customer.full_name }}
+            </td>
+            <td>{{ customer.phone }}</td>
+            <td>{{ customer.registration_date }}</td>
+            <td>{{ customer.get_source_display }}</td>
+            <td>
+              <a href="{% url 'dashboard:customer_detail' customer.id %}" class="action-btn"><i class="fas fa-eye"></i> Xem</a>
+              <a href="{% url 'admin:customers_customer_change' customer.id %}" class="action-btn" style="background:#28a745;">Sửa</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty-message">Không có khách hàng nào</div>
+    {% endif %}
+  </div>
+</body>
+</html> 

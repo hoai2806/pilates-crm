@@ -1,0 +1,450 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Lịch học - HD Pilates Studio{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+    <style>
+        #calendar-container {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        
+        .fc-event {
+            cursor: pointer;
+        }
+        
+        .fc-event-title {
+            font-weight: bold;
+        }
+        
+        .fc-toolbar-title {
+            font-size: 1.5em !important;
+            color: var(--primary-color);
+        }
+        
+        .fc .fc-button-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .fc .fc-button-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .fc .fc-button-primary:not(:disabled).fc-button-active, 
+        .fc .fc-button-primary:not(:disabled):active {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            opacity: 0.8;
+        }
+        
+        .calendar-stats {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+        
+        .stats-card {
+            flex: 1;
+            min-width: 300px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 15px;
+        }
+        
+        .stats-card h3 {
+            margin-top: 0;
+            border-bottom: 2px solid #E74C3C;
+            padding-bottom: 10px;
+            color: #C0392B;
+            font-size: 1.2em;
+        }
+        
+        .stats-chart-container {
+            height: 250px;
+            position: relative;
+        }
+        
+        .event-tooltip {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            padding: 15px;
+            z-index: 1000;
+            position: absolute;
+            max-width: 320px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .event-tooltip h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+            color: var(--primary-color);
+        }
+        
+        .event-tooltip p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        .event-tooltip-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            cursor: pointer;
+            color: #999;
+            font-size: 16px;
+        }
+        
+        .event-tooltip-close:hover {
+            color: var(--primary-color);
+        }
+        
+        .view-selector {
+            display: none;
+        }
+        
+        .calendar-summary {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #444;
+            border-left: 4px solid var(--secondary-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .calendar-summary i {
+            font-size: 24px;
+            margin-right: 15px;
+            color: var(--primary-color);
+        }
+        
+        .calendar-summary strong {
+            color: var(--primary-color);
+        }
+        
+        /* Kiểu dáng cho modal */
+        .calendar-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 9999;
+            overflow: auto;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 80%;
+            max-width: 700px;
+            animation: slideIn 0.3s;
+            border-top: 4px solid var(--primary-color);
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-70px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 1.5em;
+        }
+        
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="page-title">Lịch học</h1>
+            
+            <div class="d-flex justify-content-end">
+                <a href="{% url 'dashboard:class_schedule_form' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Thêm lịch học mới
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if calendar_summary %}
+            <div class="calendar-summary">
+                <i class="fas fa-info-circle"></i>
+                <div>{{ calendar_summary|safe }}</div>
+            </div>
+            {% endif %}
+            
+            <!-- Filter controls -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <select id="instructor-filter" class="form-select">
+                        <option value="">Tất cả huấn luyện viên</option>
+                        {% for instructor in instructors %}
+                        <option value="{{ instructor.id }}">{{ instructor.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select id="class-type-filter" class="form-select">
+                        <option value="">Tất cả loại lớp</option>
+                        {% for class_type in class_types %}
+                        <option value="{{ class_type.id }}">{{ class_type.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select id="venue-filter" class="form-select">
+                        <option value="">Tất cả địa điểm</option>
+                        {% for venue in venues %}
+                        <option value="{{ venue.id }}">{{ venue.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Calendar -->
+            <div id="calendar-container">
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Event Detail Modal -->
+<div id="event-modal" class="calendar-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="event-title">Chi tiết sự kiện</h2>
+            <span class="modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="event-details"></div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <div>
+                    <button id="delete-event" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i> Xóa
+                    </button>
+                    <button id="edit-event" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Sửa
+                    </button>
+                </div>
+                <button class="btn btn-secondary modal-close-btn">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Lịch JavaScript
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            locale: 'vi',
+            firstDay: 1, // Bắt đầu từ thứ 2
+            allDaySlot: false,
+            slotMinTime: '07:00:00',
+            slotMaxTime: '22:00:00',
+            slotDuration: '00:30:00',
+            height: 'auto',
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            },
+            events: function(info, successCallback, failureCallback) {
+                // AJAX để lấy dữ liệu sự kiện
+                fetch('/hdcrm/get-calendar-events/?start=' + info.startStr + '&end=' + info.endStr + '&view_type=' + info.view.type)
+                    .then(response => response.json())
+                    .then(data => {
+                        successCallback(data);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching events:', error);
+                        failureCallback(error);
+                    });
+            },
+            eventClick: function(info) {
+                showEventDetails(info.event);
+            }
+        });
+        
+        calendar.render();
+        
+        // Hiển thị chi tiết sự kiện
+        function showEventDetails(event) {
+            document.getElementById('event-title').innerText = event.title;
+            
+            var detailsHTML = `
+                <p><strong>Thời gian:</strong> ${formatEventTime(event)}</p>
+                <p><strong>Huấn luyện viên:</strong> ${event.extendedProps.instructor || 'Không có'}</p>
+                <p><strong>Loại lớp:</strong> ${event.extendedProps.class_type || 'Không có'}</p>
+                <p><strong>Địa điểm:</strong> ${event.extendedProps.venue || 'Không có'}</p>
+            `;
+            
+            if (event.extendedProps.description) {
+                detailsHTML += `<p><strong>Mô tả:</strong> ${event.extendedProps.description}</p>`;
+            }
+            
+            if (event.extendedProps.students) {
+                detailsHTML += `<p><strong>Học viên:</strong> ${event.extendedProps.students}</p>`;
+            }
+            
+            document.getElementById('event-details').innerHTML = detailsHTML;
+            
+            // Cập nhật các nút hành động
+            var deleteBtn = document.getElementById('delete-event');
+            var editBtn = document.getElementById('edit-event');
+            
+            deleteBtn.onclick = function() {
+                if (confirm('Bạn có chắc chắn muốn xóa sự kiện này?')) {
+                    deleteEvent(event.id, event.extendedProps.type);
+                }
+            };
+            
+            editBtn.onclick = function() {
+                window.location.href = `/hdcrm/lich-hoc/chinh-sua/${event.id}/?type=${event.extendedProps.type}`;
+            };
+            
+            // Hiển thị modal
+            document.getElementById('event-modal').style.display = 'block';
+        }
+        
+        // Hàm định dạng thời gian sự kiện
+        function formatEventTime(event) {
+            var start = event.start;
+            var end = event.end;
+            
+            var options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            
+            return start.toLocaleDateString('vi-VN', options) + ' - ' + 
+                   (end ? end.toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'}) : '');
+        }
+        
+        // Xóa sự kiện
+        function deleteEvent(eventId, type) {
+            var url = type === 'appointment' 
+                ? `/hdcrm/lich-hoc/xoa-appointment/${eventId}/` 
+                : `/hdcrm/lich-hoc/xoa/${eventId}/`;
+                
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Đã xóa sự kiện thành công!');
+                    document.getElementById('event-modal').style.display = 'none';
+                    calendar.refetchEvents();
+                } else {
+                    alert('Có lỗi xảy ra khi xóa sự kiện!');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi xóa sự kiện!');
+            });
+        }
+        
+        // Đóng modal
+        var closeButtons = document.getElementsByClassName('modal-close');
+        for (var i = 0; i < closeButtons.length; i++) {
+            closeButtons[i].onclick = function() {
+                document.getElementById('event-modal').style.display = 'none';
+            }
+        }
+        
+        var closeModalBtns = document.getElementsByClassName('modal-close-btn');
+        for (var i = 0; i < closeModalBtns.length; i++) {
+            closeModalBtns[i].onclick = function() {
+                document.getElementById('event-modal').style.display = 'none';
+            }
+        }
+        
+        // Đóng modal khi click bên ngoài
+        window.onclick = function(event) {
+            var modal = document.getElementById('event-modal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        // Lọc sự kiện
+        document.getElementById('instructor-filter').addEventListener('change', function() {
+            // Thực hiện lọc
+        });
+        
+        document.getElementById('class-type-filter').addEventListener('change', function() {
+            // Thực hiện lọc
+        });
+        
+        document.getElementById('venue-filter').addEventListener('change', function() {
+            // Thực hiện lọc
+        });
+    });
+</script>
+{% endblock %} 

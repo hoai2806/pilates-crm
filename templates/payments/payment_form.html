@@ -1,0 +1,653 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{% if payment.id %}Chỉnh sửa đơn hàng{% else %}Tạo đơn hàng mới{% endif %} - HD Pilates Studio{% endblock %}
+
+{% block extra_css %}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .form-section {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .form-section h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .payment-methods label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .totals-section {
+            font-size: 1.1em;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .totals-section strong {
+            color: #dc3545;
+        }
+        .discount-amount {
+            display: none;
+        }
+        .discount-type-selector:checked ~ .discount-amount {
+            display: block;
+        }
+        .select2-container {
+            width: 100% !important;
+        }
+        .preview-image {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="page-title">{% if payment.id %}Chỉnh sửa đơn hàng{% else %}Tạo đơn hàng mới{% endif %}</h1>
+                
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'payment_list' %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-arrow-left"></i> Quay lại danh sách
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="card form-section">
+                <div class="card-header">
+                    <h3 class="mb-0">Thông tin khách hàng</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label for="customer">Khách hàng</label>
+                        <select id="customer" name="customer" class="form-control customer-select" required>
+                            <option value="">-- Chọn khách hàng --</option>
+                            {% for customer in customers %}
+                                <option value="{{ customer.id }}" {% if selected_customer == customer.id %}selected{% endif %}>
+                                    {{ customer.full_name }} - {{ customer.phone }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card form-section">
+                <div class="card-header">
+                    <h3 class="mb-0">Thông tin gói tập</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label for="class_type">Loại lớp</label>
+                        <select id="class_type" name="class_type" class="form-control" required>
+                            <option value="">-- Chọn loại lớp --</option>
+                            {% for class_type in class_types %}
+                                <option value="{{ class_type.id }}" {% if selected_class_type == class_type.id %}selected{% endif %}>
+                                    {{ class_type.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="class_price">Gói tập</label>
+                        <select id="class_price" name="class_price" class="form-control" required>
+                            <option value="">-- Chọn gói tập --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="sessions">Số buổi tập</label>
+                        <input type="number" id="sessions" name="sessions" class="form-control" value="{{ initial.sessions|default:'0' }}" readonly>
+                    </div>
+                    
+                    <div class="totals-section">
+                        <div class="row">
+                            <div class="col-md-4">Đơn giá: <strong id="package-price">0 VNĐ</strong></div>
+                            <div class="col-md-4">Số buổi: <strong id="session-count">0</strong></div>
+                            <div class="col-md-4">Tổng tiền: <strong id="total-amount" class="text-primary">0 VNĐ</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Ưu đãi</h3>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label>Loại ưu đãi</label>
+                            <div class="form-check">
+                                <input class="form-check-input discount-type-selector" type="radio" name="discount_type" id="discount_none" value="none" checked>
+                                <label class="form-check-label" for="discount_none">
+                                    Không áp dụng
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input discount-type-selector" type="radio" name="discount_type" id="discount_percentage" value="percentage">
+                                <label class="form-check-label" for="discount_percentage">
+                                    Giảm theo %
+                                </label>
+                                <div class="discount-amount mt-2">
+                                    <input type="number" class="form-control" name="discount_percentage" id="discount_percentage_value" min="0" max="100" placeholder="Nhập % giảm giá">
+                                </div>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input discount-type-selector" type="radio" name="discount_type" id="discount_amount" value="amount">
+                                <label class="form-check-label" for="discount_amount">
+                                    Giảm theo số tiền
+                                </label>
+                                <div class="discount-amount mt-2">
+                                    <input type="number" class="form-control" name="discount_amount" id="discount_amount_value" min="0" placeholder="Nhập số tiền giảm">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label for="bonus_sessions">Tặng thêm buổi</label>
+                            <input type="number" id="bonus_sessions" name="bonus_sessions" class="form-control" value="0" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="totals-section">
+                            <div>Tổng tiền: <strong id="original-amount" class="text-primary">0 VNĐ</strong></div>
+                            <div>Giảm giá: <strong id="discount-amount" class="text-danger">0 VNĐ</strong></div>
+                            <div>Thành tiền: <strong id="final-amount" class="text-primary" style="font-size: 1.2em; font-weight: bold;">0 VNĐ</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Thanh toán</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label>Hình thức thanh toán</label>
+                            <div class="form-check">
+                                <input class="form-check-input payment-type-selector" type="radio" name="payment_type" id="payment_type_full" value="full" checked>
+                                <label class="form-check-label" for="payment_type_full">
+                                    Thanh toán toàn bộ
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input payment-type-selector" type="radio" name="payment_type" id="payment_type_partial" value="partial">
+                                <label class="form-check-label" for="payment_type_partial">
+                                    Thanh toán một phần
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="payment_method">Phương thức thanh toán</label>
+                            <select id="payment_method" name="payment_method" class="form-control" required>
+                                <option value="">-- Chọn phương thức thanh toán --</option>
+                                <option value="cash">Tiền mặt</option>
+                                <option value="bank_transfer">Chuyển khoản</option>
+                                <option value="card">Thẻ</option>
+                                <option value="other">Khác</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="payment_date">Ngày thanh toán</label>
+                            <input type="date" id="payment_date" name="payment_date" class="form-control" required value="{{ today_date|date:'Y-m-d' }}">
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="status">Trạng thái</label>
+                            <select id="status" name="status" class="form-control" required>
+                                <option value="completed">Đã hoàn thành</option>
+                                <option value="pending">Chờ xử lý</option>
+                                <option value="cancelled">Đã hủy</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group mb-3" id="full_payment_section">
+                            <label for="amount"><strong>Số tiền thanh toán (VNĐ)</strong></label>
+                            <input type="text" id="amount" name="amount" class="form-control form-control-lg bg-light text-primary font-weight-bold" required readonly>
+                            <input type="hidden" id="amount_value" name="amount_value">
+                        </div>
+                        
+                        <div id="partial_payment_section" style="display: none;">
+                            <div class="form-group mb-3">
+                                <label for="paid_amount"><strong>Số tiền thanh toán trước (VNĐ)</strong></label>
+                                <input type="text" id="paid_amount" name="paid_amount" class="form-control form-control-lg bg-light text-primary font-weight-bold">
+                                <input type="hidden" id="paid_amount_value" name="paid_amount_value">
+                                <small class="form-text text-muted">Nhập số tiền thanh toán một phần</small>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="remaining_amount"><strong>Số tiền còn lại (VNĐ)</strong></label>
+                                <input type="text" id="remaining_amount" name="remaining_amount" class="form-control form-control-lg bg-light text-danger font-weight-bold" readonly>
+                                <input type="hidden" id="remaining_amount_value" name="remaining_amount_value">
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="remaining_payment_due_date">Ngày hẹn thanh toán còn lại</label>
+                                <input type="date" id="remaining_payment_due_date" name="remaining_payment_due_date" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="payment_proof">Chứng từ thanh toán</label>
+                            <input type="file" id="payment_proof" name="payment_proof" class="form-control">
+                            <small class="form-text text-muted">Tải lên ảnh hoặc file pdf chứng từ thanh toán (nếu có)</small>
+                            <div id="image-preview"></div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="notes">Ghi chú</label>
+                            <textarea id="notes" name="notes" class="form-control" rows="3">{{ initial.notes|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12 text-center">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {% if payment.id %}Cập nhật{% else %}Tạo đơn hàng{% endif %}
+                    </button>
+                    <a href="{% url 'payment_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Hủy
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Khai báo biến global
+            let originalTotal = 0;
+            
+            // Khởi tạo select2 cho dropdown khách hàng
+            $('.customer-select').select2({
+                placeholder: "Tìm kiếm khách hàng...",
+                allowClear: true,
+                minimumInputLength: 2,
+                ajax: {
+                    url: '/payments/api/search-customers/',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results
+                        };
+                    },
+                    cache: true
+                },
+                templateResult: formatCustomer,
+                templateSelection: formatCustomerSelection
+            });
+            
+            function formatCustomer(customer) {
+                if (customer.loading) return customer.text;
+                var markup = '<div class="select2-result clearfix">' +
+                    '<div class="select2-result__title">' + customer.text + '</div>';
+                if (customer.extra_info) {
+                    markup += '<div class="select2-result__info">' + customer.extra_info + '</div>';
+                }
+                markup += '</div>';
+                return $(markup);
+            }
+            
+            function formatCustomerSelection(customer) {
+                return customer.text || customer.full_name;
+            }
+            
+            // Các element
+            const classTypeSelect = document.getElementById('class_type');
+            const classPriceSelect = document.getElementById('class_price');
+            const sessionsInput = document.getElementById('sessions');
+            const amountInput = document.getElementById('amount');
+            const discountPercentageInput = document.getElementById('discount_percentage_value');
+            const discountAmountInput = document.getElementById('discount_amount_value');
+            const bonusSessionsInput = document.getElementById('bonus_sessions');
+            const paymentProofInput = document.getElementById('payment_proof');
+            const imagePreview = document.getElementById('image-preview');
+            
+            // Xử lý khi chọn loại lớp
+            classTypeSelect.addEventListener('change', function() {
+                const classTypeId = this.value;
+                if (!classTypeId) return;
+                
+                // Lấy danh sách giá theo loại lớp
+                fetch(`/payments/api/class-prices/${classTypeId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        classPriceSelect.innerHTML = '<option value="">-- Chọn gói tập --</option>';
+                        if (data.results) {
+                            data.results.forEach(price => {
+                                const option = document.createElement('option');
+                                option.value = price.id;
+                                option.textContent = `${price.name} - ${formatCurrency(price.price)} VNĐ/buổi`;
+                                classPriceSelect.appendChild(option);
+                            });
+                            
+                            // Nếu đang ở trang chỉnh sửa, tự động chọn giá trị đã có
+                            if (window.location.pathname.includes('chinh-sua')) {
+                                // Lấy gói tập đã chọn từ dữ liệu hiện tại nếu có
+                                {% if customer_package and customer_package.class_type.prices.first %}
+                                const selectedPackageId = {{ customer_package.class_type.prices.first.id }};
+                                {% else %}
+                                const selectedPackageId = null;
+                                {% endif %}
+                                
+                                if (selectedPackageId) {
+                                    // Tìm option có giá trị phù hợp
+                                    const existingOption = classPriceSelect.querySelector(`option[value="${selectedPackageId}"]`);
+                                    if (existingOption) {
+                                        existingOption.selected = true;
+                                        // Gọi hàm cập nhật tổng khi đã chọn gói
+                                        updateTotals();
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+            
+            // Xử lý khi chọn gói tập
+            classPriceSelect.addEventListener('change', updateTotals);
+            
+            // Cập nhật các trường tính toán khi có thay đổi
+            discountPercentageInput.addEventListener('input', updateDiscount);
+            discountAmountInput.addEventListener('input', updateDiscount);
+            bonusSessionsInput.addEventListener('input', updateBonus);
+            
+            // Xử lý ảnh xem trước
+            paymentProofInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.innerHTML = `<img src="${e.target.result}" class="preview-image" alt="Payment proof">`;
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Khi trang đã tải xong, nếu đang ở trang chỉnh sửa, khởi tạo các giá trị ban đầu
+            if (window.location.pathname.includes('chinh-sua')) {
+                // Nếu đã có loại lớp được chọn, kích hoạt sự kiện change để lấy gói tập
+                if (classTypeSelect.value) {
+                    // Kích hoạt sự kiện change một lần nữa để lấy dữ liệu gói tập
+                    const event = new Event('change');
+                    classTypeSelect.dispatchEvent(event);
+                }
+                
+                // Khởi tạo giá trị ban đầu cho các trường
+                {% if payment %}
+                const paymentAmount = {{ payment.amount }};
+                {% else %}
+                const paymentAmount = 0;
+                {% endif %}
+                originalTotal = paymentAmount;
+                
+                // Thiết lập kiểu giảm giá
+                {% if discount_type %}
+                const discountType = '{{ discount_type }}';
+                {% else %}
+                const discountType = 'none';
+                {% endif %}
+                
+                if (discountType === 'percentage') {
+                    document.getElementById('discount_percentage').checked = true;
+                    {% if discount_percentage %}
+                    document.getElementById('discount_percentage_value').value = {{ discount_percentage }};
+                    {% endif %}
+                } else if (discountType === 'amount') {
+                    document.getElementById('discount_amount').checked = true;
+                    {% if discount_amount %}
+                    document.getElementById('discount_amount_value').value = {{ discount_amount }};
+                    {% endif %}
+                } else {
+                    document.getElementById('discount_none').checked = true;
+                }
+                
+                // Khởi tạo số buổi bonus
+                {% if bonus_sessions %}
+                bonusSessionsInput.value = {{ bonus_sessions }};
+                {% endif %}
+                
+                // Thiết lập phương thức thanh toán
+                {% if payment.payment_method %}
+                const paymentMethod = '{{ payment.payment_method }}';
+                if (paymentMethod) {
+                    document.getElementById('payment_method').value = paymentMethod;
+                }
+                {% endif %}
+                
+                // Thiết lập loại thanh toán
+                {% if payment.payment_type %}
+                const paymentType = '{{ payment.payment_type }}';
+                if (paymentType === 'partial') {
+                    document.getElementById('payment_type_partial').checked = true;
+                    // Cập nhật số tiền đã thanh toán
+                    {% if payment.paid_amount %}
+                    document.getElementById('paid_amount_value').value = {{ payment.paid_amount }};
+                    document.getElementById('paid_amount').value = formatCurrency({{ payment.paid_amount }}) + ' VNĐ';
+                    {% endif %}
+                } else {
+                    document.getElementById('payment_type_full').checked = true;
+                }
+                {% endif %}
+                
+                // Cập nhật hiển thị số tiền và áp dụng discount
+                updateDiscount();
+                updatePaymentFields();
+            }
+            
+            function updateTotals() {
+                const packageId = classPriceSelect.value;
+                if (!packageId) return;
+                
+                console.log('Gọi API package với ID:', packageId);
+                
+                // Thêm hiển thị trạng thái đang tải
+                document.getElementById('package-price').textContent = "Đang tải...";
+                document.getElementById('session-count').textContent = "Đang tải...";
+                document.getElementById('total-amount').textContent = "Đang tải...";
+                
+                // Gọi API để lấy thông tin gói tập
+                fetch(`/payments/api/package/${packageId}/`)
+                    .then(response => {
+                        console.log('API response status:', response.status);
+                        if (!response.ok) {
+                            throw new Error('Lỗi kết nối: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('API response data:', data);
+                        
+                        // Kiểm tra nếu API trả về lỗi
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        
+                        // Kiểm tra các trường dữ liệu bắt buộc
+                        if (!data.price || !data.total_sessions) {
+                            throw new Error('Dữ liệu không đầy đủ từ server');
+                        }
+                        
+                        const price = data.price || 0;
+                        const sessions = data.total_sessions || parseInt(sessionsInput.value) || 0;
+                        const total = price * sessions;
+                        
+                        // Lưu tổng ban đầu vào biến toàn cục
+                        originalTotal = total;
+                        
+                        document.getElementById('package-price').textContent = formatCurrency(price) + ' VNĐ/buổi';
+                        document.getElementById('session-count').textContent = sessions;
+                        document.getElementById('total-amount').textContent = formatCurrency(total) + ' VNĐ';
+                        document.getElementById('original-amount').textContent = formatCurrency(total) + ' VNĐ';
+                        document.getElementById('final-amount').textContent = formatCurrency(total) + ' VNĐ';
+                        
+                        // Không reset discount fields nếu đang ở trang edit
+                        if (!window.location.pathname.includes('chinh-sua')) {
+                            // Reset các trường giảm giá
+                            document.getElementById('discount_none').checked = true;
+                            discountPercentageInput.value = '';
+                            discountAmountInput.value = '';
+                        }
+                        
+                        // Cập nhật giá trị vào input amount và sessions
+                        document.getElementById('amount_value').value = total;
+                        amountInput.value = formatCurrency(total) + ' VNĐ';
+                        sessionsInput.value = sessions;
+                        
+                        // Sau khi có thông tin gói, cập nhật ưu đãi nếu có
+                        updateDiscount();
+                    })
+                    .catch(error => {
+                        console.error('Error fetching package data:', error);
+                        // Hiển thị thông báo lỗi chi tiết hơn
+                        document.getElementById('package-price').textContent = "Lỗi";
+                        document.getElementById('session-count').textContent = "Lỗi";
+                        document.getElementById('total-amount').textContent = "Lỗi";
+                        alert('Có lỗi khi lấy thông tin gói tập: ' + error.message);
+                    });
+            }
+            
+            function updateDiscount() {
+                // Lấy tổng ban đầu từ thông tin gói tập
+                const packageId = classPriceSelect.value;
+                if (!packageId && originalTotal === 0) return;
+                
+                // Tính lại từ tổng ban đầu thay vì dùng amountInput
+                let discountValue = 0;
+                
+                if (document.getElementById('discount_percentage').checked) {
+                    const percentage = parseFloat(discountPercentageInput.value) || 0;
+                    discountValue = originalTotal * (percentage / 100);
+                } else if (document.getElementById('discount_amount').checked) {
+                    discountValue = parseFloat(discountAmountInput.value) || 0;
+                }
+                
+                const finalAmount = originalTotal - discountValue;
+                
+                document.getElementById('original-amount').textContent = formatCurrency(originalTotal) + ' VNĐ';
+                document.getElementById('discount-amount').textContent = '-' + formatCurrency(discountValue) + ' VNĐ';
+                document.getElementById('final-amount').textContent = formatCurrency(finalAmount) + ' VNĐ';
+                
+                // Cập nhật giá trị cuối cùng vào input amount
+                document.getElementById('amount_value').value = finalAmount;
+                amountInput.value = formatCurrency(finalAmount) + ' VNĐ';
+                
+                // Cập nhật phần thanh toán dựa trên loại thanh toán
+                updatePaymentFields();
+            }
+            
+            function updateBonus() {
+                const bonusSessions = parseInt(bonusSessionsInput.value) || 0;
+                const regularSessions = parseInt(sessionsInput.value) || 0;
+                
+                if (bonusSessions > 0) {
+                    document.getElementById('session-count').textContent = regularSessions + ' + ' + bonusSessions + ' (tặng)';
+                } else {
+                    document.getElementById('session-count').textContent = regularSessions;
+                }
+            }
+            
+            function formatCurrency(number) {
+                return new Intl.NumberFormat('vi-VN', {
+                    style: 'decimal',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                    useGrouping: true
+                }).format(number);
+            }
+            
+            // Handle discount type selection
+            document.querySelectorAll('input[name="discount_type"]').forEach(input => {
+                input.addEventListener('change', updateDiscount);
+            });
+            
+            // Xử lý khi chọn kiểu thanh toán
+            document.querySelectorAll('input[name="payment_type"]').forEach(input => {
+                input.addEventListener('change', updatePaymentFields);
+            });
+            
+            // Xử lý khi nhập số tiền thanh toán một phần
+            document.getElementById('paid_amount').addEventListener('input', function(e) {
+                // Chuyển giá trị nhập vào thành số và loại bỏ ký tự không phải số
+                const inputValue = e.target.value.replace(/[^\d]/g, '');
+                const numericValue = parseInt(inputValue) || 0;
+                
+                // Cập nhật cả giá trị thực và giá trị hiển thị
+                document.getElementById('paid_amount_value').value = numericValue;
+                e.target.value = formatCurrency(numericValue) + ' VNĐ';
+                
+                updateRemainingAmount();
+            });
+            
+            function updatePaymentFields() {
+                const paymentTypeFull = document.getElementById('payment_type_full').checked;
+                const fullPaymentSection = document.getElementById('full_payment_section');
+                const partialPaymentSection = document.getElementById('partial_payment_section');
+                
+                if (paymentTypeFull) {
+                    fullPaymentSection.style.display = 'block';
+                    partialPaymentSection.style.display = 'none';
+                } else {
+                    fullPaymentSection.style.display = 'none';
+                    partialPaymentSection.style.display = 'block';
+                    
+                    // Cập nhật giá trị ban đầu cho thanh toán một phần
+                    const finalAmount = parseFloat(document.getElementById('amount_value').value) || 0;
+                    const halfAmount = Math.floor(finalAmount / 2);
+                    document.getElementById('paid_amount_value').value = halfAmount;
+                    document.getElementById('paid_amount').value = formatCurrency(halfAmount) + ' VNĐ';
+                    updateRemainingAmount();
+                }
+            }
+            
+            function updateRemainingAmount() {
+                const finalAmount = parseFloat(document.getElementById('amount_value').value) || 0;
+                const paidAmount = parseFloat(document.getElementById('paid_amount_value').value) || 0;
+                const remainingAmount = Math.max(0, finalAmount - paidAmount);
+                
+                document.getElementById('remaining_amount_value').value = remainingAmount;
+                document.getElementById('remaining_amount').value = formatCurrency(remainingAmount) + ' VNĐ';
+                
+                // Tự động đặt ngày hẹn thanh toán cho phần còn lại (mặc định là 30 ngày sau)
+                if (!document.getElementById('remaining_payment_due_date').value) {
+                    const today = new Date();
+                    today.setDate(today.getDate() + 30);
+                    const dueDate = today.toISOString().split('T')[0];
+                    document.getElementById('remaining_payment_due_date').value = dueDate;
+                }
+            }
+        });
+    </script>
+{% endblock %} 

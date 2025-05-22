@@ -1,0 +1,213 @@
+{% load static %}
+<!-- Danh sách khách hàng theo trạng thái -->
+<div class="customer-boards">
+  <!-- Liên hệ -->
+  <div class="customer-column">
+    <h3>Liên hệ ({{ contact_customers.count }})</h3>
+    <div class="customer-cards">
+      {% for customer in contact_customers %}
+        <div class="customer-card">
+          <div class="card-header">
+            {% if customer.profile_image %}
+              <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+            {% else %}
+              <div class="customer-avatar-placeholder">{{ customer.full_name|make_list|first }}</div>
+            {% endif %}
+            <div class="customer-name">{{ customer.full_name }}</div>
+          </div>
+          <div class="card-body">
+            <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+            <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date }}</p>
+            <p><i class="fas fa-info-circle"></i> {{ customer.get_source_display }}</p>
+          </div>
+          <div class="card-footer">
+            <a href="{% url 'admin:customers_customer_change' customer.id %}" class="btn-edit">Sửa</a>
+            <a href="{% url 'admin:customers_customer_delete' customer.id %}" class="btn-delete">Xóa</a>
+          </div>
+        </div>
+      {% empty %}
+        <p class="empty-message">Không có khách hàng nào</p>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <!-- Tập thử -->
+  <div class="customer-column">
+    <h3>Tập thử ({{ trial_customers.count }})</h3>
+    <div class="customer-cards">
+      {% for customer in trial_customers %}
+        <div class="customer-card">
+          <div class="card-header">
+            {% if customer.profile_image %}
+              <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+            {% else %}
+              <div class="customer-avatar-placeholder">{{ customer.full_name|make_list|first }}</div>
+            {% endif %}
+            <div class="customer-name">{{ customer.full_name }}</div>
+          </div>
+          <div class="card-body">
+            <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+            <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date }}</p>
+            <p><i class="fas fa-info-circle"></i> {{ customer.get_source_display }}</p>
+          </div>
+          <div class="card-footer">
+            <a href="{% url 'admin:customers_customer_change' customer.id %}" class="btn-edit">Sửa</a>
+            <a href="{% url 'admin:customers_customer_delete' customer.id %}" class="btn-delete">Xóa</a>
+          </div>
+        </div>
+      {% empty %}
+        <p class="empty-message">Không có khách hàng nào</p>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <!-- Mua gói -->
+  <div class="customer-column">
+    <h3>Mua gói ({{ purchased_customers.count }})</h3>
+    <div class="customer-cards">
+      {% for customer in purchased_customers %}
+        <div class="customer-card">
+          <div class="card-header">
+            {% if customer.profile_image %}
+              <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+            {% else %}
+              <div class="customer-avatar-placeholder">{{ customer.full_name|make_list|first }}</div>
+            {% endif %}
+            <div class="customer-name">{{ customer.full_name }}</div>
+          </div>
+          <div class="card-body">
+            <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+            <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date }}</p>
+            <p><i class="fas fa-info-circle"></i> {{ customer.get_source_display }}</p>
+          </div>
+          <div class="card-footer">
+            <a href="{% url 'admin:customers_customer_change' customer.id %}" class="btn-edit">Sửa</a>
+            <a href="{% url 'admin:customers_customer_delete' customer.id %}" class="btn-delete">Xóa</a>
+          </div>
+        </div>
+      {% empty %}
+        <p class="empty-message">Không có khách hàng nào</p>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <!-- Tái mua -->
+  <div class="customer-column">
+    <h3>Tái mua ({{ repurchased_customers.count }})</h3>
+    <div class="customer-cards">
+      {% for customer in repurchased_customers %}
+        <div class="customer-card">
+          <div class="card-header">
+            {% if customer.profile_image %}
+              <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+            {% else %}
+              <div class="customer-avatar-placeholder">{{ customer.full_name|make_list|first }}</div>
+            {% endif %}
+            <div class="customer-name">{{ customer.full_name }}</div>
+          </div>
+          <div class="card-body">
+            <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+            <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date }}</p>
+            <p><i class="fas fa-info-circle"></i> {{ customer.get_source_display }}</p>
+          </div>
+          <div class="card-footer">
+            <a href="{% url 'admin:customers_customer_change' customer.id %}" class="btn-edit">Sửa</a>
+            <a href="{% url 'admin:customers_customer_delete' customer.id %}" class="btn-delete">Xóa</a>
+          </div>
+        </div>
+      {% empty %}
+        <p class="empty-message">Không có khách hàng nào</p>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <!-- Không đến tập thử -->
+  <div class="customer-column">
+    <h3>Không đến tập thử ({{ no_trial_customers.count }})</h3>
+    <div class="customer-cards">
+      {% for customer in no_trial_customers %}
+        <div class="customer-card">
+          <div class="card-header">
+            {% if customer.profile_image %}
+              <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+            {% else %}
+              <div class="customer-avatar-placeholder">{{ customer.full_name|make_list|first }}</div>
+            {% endif %}
+            <div class="customer-name">{{ customer.full_name }}</div>
+          </div>
+          <div class="card-body">
+            <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+            <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date }}</p>
+            <p><i class="fas fa-info-circle"></i> {{ customer.get_source_display }}</p>
+          </div>
+          <div class="card-footer">
+            <a href="{% url 'admin:customers_customer_change' customer.id %}" class="btn-edit">Sửa</a>
+            <a href="{% url 'admin:customers_customer_delete' customer.id %}" class="btn-delete">Xóa</a>
+          </div>
+        </div>
+      {% empty %}
+        <p class="empty-message">Không có khách hàng nào</p>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <!-- Không mua -->
+  <div class="customer-column">
+    <h3>Không mua ({{ no_purchase_customers.count }})</h3>
+    <div class="customer-cards">
+      {% for customer in no_purchase_customers %}
+        <div class="customer-card">
+          <div class="card-header">
+            {% if customer.profile_image %}
+              <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+            {% else %}
+              <div class="customer-avatar-placeholder">{{ customer.full_name|make_list|first }}</div>
+            {% endif %}
+            <div class="customer-name">{{ customer.full_name }}</div>
+          </div>
+          <div class="card-body">
+            <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+            <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date }}</p>
+            <p><i class="fas fa-info-circle"></i> {{ customer.get_source_display }}</p>
+          </div>
+          <div class="card-footer">
+            <a href="{% url 'admin:customers_customer_change' customer.id %}" class="btn-edit">Sửa</a>
+            <a href="{% url 'admin:customers_customer_delete' customer.id %}" class="btn-delete">Xóa</a>
+          </div>
+        </div>
+      {% empty %}
+        <p class="empty-message">Không có khách hàng nào</p>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <!-- Không tái mua -->
+  <div class="customer-column">
+    <h3>Không tái mua ({{ no_repurchase_customers.count }})</h3>
+    <div class="customer-cards">
+      {% for customer in no_repurchase_customers %}
+        <div class="customer-card">
+          <div class="card-header">
+            {% if customer.profile_image %}
+              <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="customer-avatar">
+            {% else %}
+              <div class="customer-avatar-placeholder">{{ customer.full_name|make_list|first }}</div>
+            {% endif %}
+            <div class="customer-name">{{ customer.full_name }}</div>
+          </div>
+          <div class="card-body">
+            <p><i class="fas fa-phone"></i> {{ customer.phone }}</p>
+            <p><i class="fas fa-calendar-alt"></i> {{ customer.registration_date }}</p>
+            <p><i class="fas fa-info-circle"></i> {{ customer.get_source_display }}</p>
+          </div>
+          <div class="card-footer">
+            <a href="{% url 'admin:customers_customer_change' customer.id %}" class="btn-edit">Sửa</a>
+            <a href="{% url 'admin:customers_customer_delete' customer.id %}" class="btn-delete">Xóa</a>
+          </div>
+        </div>
+      {% empty %}
+        <p class="empty-message">Không có khách hàng nào</p>
+      {% endfor %}
+    </div>
+  </div>
+</div> 

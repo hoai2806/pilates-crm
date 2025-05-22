@@ -1,0 +1,31 @@
+{% extends 'reback/layout.html' %}
+{% load i18n %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'reback:index' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reback:customers' %}">Khách hàng</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reback:customer_detail' customer.pk %}">{{ customer.full_name }}</a></li>
+<li class="breadcrumb-item active">Xác nhận xóa</li>
+{% endblock %}
+
+{% block page_heading %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-6 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <p class="card-text">Bạn có chắc chắn muốn xóa khách hàng <strong>{{ customer.full_name }}</strong> không?</p>
+                <p class="text-danger">Hành động này không thể hoàn tác.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Xóa Khách Hàng</button>
+                    <a href="{% url 'reback:customer_detail' customer.pk %}" class="btn btn-secondary">Hủy</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

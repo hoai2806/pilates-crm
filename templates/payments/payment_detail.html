@@ -1,0 +1,333 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Chi tiết đơn hàng #{{ payment.invoice_number }} - HD Pilates Studio{% endblock %}
+
+{% block extra_css %}
+<style>
+  .payment-detail-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    padding: 25px;
+    margin-bottom: 20px;
+  }
+  
+  .payment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .payment-id {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .payment-date {
+    font-size: 14px;
+    color: #777;
+  }
+  
+  .payment-status {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .status-pending {
+    background-color: #ffeeba;
+    color: #856404;
+  }
+  
+  .status-completed {
+    background-color: #d4edda;
+    color: #155724;
+  }
+  
+  .status-cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+  
+  .payment-section {
+    margin-bottom: 25px;
+  }
+  
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+  }
+  
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+  }
+  
+  .info-item {
+    margin-bottom: 10px;
+  }
+  
+  .info-label {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 5px;
+  }
+  
+  .info-value {
+    font-size: 15px;
+    color: #333;
+    font-weight: 500;
+  }
+  
+  .price-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #28a745;
+  }
+  
+  .package-detail {
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .payment-proof-image {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+  }
+  
+  .actions-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+  <h1 class="page-title">Chi tiết đơn hàng</h1>
+  
+  <div class="page-actions">
+    <a href="{% url 'payment_edit' payment.id %}" class="btn btn-primary">
+      <i class="fas fa-edit"></i> Chỉnh sửa
+    </a>
+    <a href="{% url 'payment_list' %}" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left"></i> Quay lại
+    </a>
+  </div>
+</div>
+
+<div class="payment-detail-container">
+  <!-- Thông tin đầu đơn hàng -->
+  <div class="payment-header">
+    <div>
+      <div class="payment-id">Đơn hàng #{{ payment.invoice_number }}</div>
+      <div class="payment-date">Ngày tạo: {{ payment.payment_date|date:"d/m/Y" }}</div>
+    </div>
+    <div>
+      {% if payment.status == 'pending' %}
+        <span class="payment-status status-pending">Đang chờ</span>
+      {% elif payment.status == 'completed' %}
+        <span class="payment-status status-completed">Hoàn thành</span>
+      {% elif payment.status == 'cancelled' %}
+        <span class="payment-status status-cancelled">Đã hủy</span>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Thông tin khách hàng -->
+  <div class="payment-section">
+    <h3 class="section-title">Thông tin khách hàng</h3>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Tên khách hàng:</div>
+        <div class="info-value">
+          <a href="{% url 'dashboard:customer_detail' payment.customer.id %}">
+            {{ payment.customer.full_name }}
+          </a>
+        </div>
+      </div>
+      
+      <div class="info-item">
+        <div class="info-label">Số điện thoại:</div>
+        <div class="info-value">{{ payment.customer.phone }}</div>
+      </div>
+      
+      <div class="info-item">
+        <div class="info-label">Email:</div>
+        <div class="info-value">{{ payment.customer.email|default:"--" }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Thông tin dịch vụ -->
+  <div class="payment-section">
+    <h3 class="section-title">Thông tin dịch vụ</h3>
+    {% if payment.class_type %}
+      <div class="package-detail">
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Loại lớp:</div>
+            <div class="info-value">{{ payment.class_type.name }}</div>
+          </div>
+          
+          {% for package in customer_packages %}
+            <div class="info-item">
+              <div class="info-label">Số buổi tập:</div>
+              <div class="info-value">{{ package.total_sessions }} buổi</div>
+            </div>
+            
+            <div class="info-item">
+              <div class="info-label">Số buổi còn lại:</div>
+              <div class="info-value">{{ package.remaining_sessions }} buổi</div>
+            </div>
+            
+            <div class="info-item">
+              <div class="info-label">Ngày bắt đầu:</div>
+              <div class="info-value">{{ package.start_date|date:"d/m/Y" }}</div>
+            </div>
+            
+            <div class="info-item">
+              <div class="info-label">Ngày kết thúc:</div>
+              <div class="info-value">{{ package.end_date|date:"d/m/Y" }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <p class="text-muted">Không có thông tin dịch vụ</p>
+    {% endif %}
+  </div>
+  
+  <!-- Thông tin thanh toán -->
+  <div class="payment-section">
+    <h3 class="section-title">Thông tin thanh toán</h3>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Hình thức thanh toán:</div>
+            <div class="info-value">
+              {% if payment.payment_type == 'full' %}
+                Thanh toán toàn bộ
+              {% else %}
+                Thanh toán một phần
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="info-item">
+            <div class="info-label">Phương thức thanh toán:</div>
+            <div class="info-value">
+              {% if payment.payment_method == 'cash' %}
+                Tiền mặt
+              {% elif payment.payment_method == 'bank_transfer' %}
+                Chuyển khoản
+              {% elif payment.payment_method == 'card' %}
+                Thẻ
+              {% else %}
+                Khác
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="info-item">
+            <div class="info-label">Ngày thanh toán:</div>
+            <div class="info-value">{{ payment.payment_date|date:"d/m/Y" }}</div>
+          </div>
+          
+          {% if payment.payment_type == 'partial' %}
+            <div class="info-item">
+              <div class="info-label">Ngày thanh toán còn lại:</div>
+              <div class="info-value">
+                {{ payment.remaining_payment_due_date|date:"d/m/Y"|default:"--" }}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card bg-light">
+          <div class="card-body">
+            <div class="info-item">
+              <div class="info-label">Tổng tiền:</div>
+              <div class="info-value">{{ payment.amount|floatformat:0|intcomma }} VNĐ</div>
+            </div>
+            
+            {% if payment.discount_type != 'none' %}
+              <div class="info-item">
+                <div class="info-label">Giảm giá:</div>
+                <div class="info-value text-danger">
+                  {% if payment.discount_type == 'percentage' %}
+                    -{{ payment.discount_value|floatformat:0 }}%
+                  {% else %}
+                    -{{ payment.discount_value|floatformat:0|intcomma }} VNĐ
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
+            
+            <div class="info-item">
+              <div class="info-label">Thành tiền:</div>
+              <div class="price-value">{{ payment.final_amount|floatformat:0|intcomma }} VNĐ</div>
+            </div>
+            
+            {% if payment.payment_type == 'partial' %}
+              <hr>
+              <div class="info-item">
+                <div class="info-label">Đã thanh toán:</div>
+                <div class="info-value text-success">{{ payment.paid_amount|floatformat:0|intcomma }} VNĐ</div>
+              </div>
+              
+              <div class="info-item">
+                <div class="info-label">Còn lại:</div>
+                <div class="info-value text-danger">{{ payment.remaining_amount|floatformat:0|intcomma }} VNĐ</div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Chứng từ thanh toán -->
+  {% if payment.payment_proof %}
+    <div class="payment-section">
+      <h3 class="section-title">Chứng từ thanh toán</h3>
+      <div class="text-center">
+        <img src="{{ payment.payment_proof.url }}" class="payment-proof-image" alt="Chứng từ thanh toán">
+      </div>
+    </div>
+  {% endif %}
+  
+  <!-- Ghi chú -->
+  {% if payment.notes %}
+    <div class="payment-section">
+      <h3 class="section-title">Ghi chú</h3>
+      <div class="card bg-light">
+        <div class="card-body">
+          {{ payment.notes|linebreaks }}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %} 

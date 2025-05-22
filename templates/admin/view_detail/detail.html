@@ -1,0 +1,286 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify custom_admin_tags %}
+
+{% block extrahead %}{{ block.super }}
+<script type="text/javascript" src="{% static 'admin/js/admin/RelatedObjectLookups.js' %}"></script>
+<script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+<script type="text/javascript" src="{% static 'admin/js/actions.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/price_format.js' %}"></script>
+{{ media }}
+{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/detail_view.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} detail-view{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; {{ object }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="module">
+        <div class="detail-container">
+            {% for fieldset in fieldsets %}
+            <div class="detail-fieldset">
+                <legend>{{ fieldset.0|default:"Thông tin chi tiết" }}</legend>
+                
+                <div class="field-grid">
+                    {% for field in fieldset.1.fields %}
+                        {% if field in object_data %}
+                        <div class="read-only-field">
+                            <label>{{ field_labels|get_item:field }}</label>
+                            <div class="readonly">
+                                {% with value=object_data|get_item:field %}
+                                    {% if field == 'address' %}
+                                        <div class="address-display">
+                                            {% for component in value|split:", " %}
+                                                <span class="address-tag">
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                    {{ component|trim }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    {% elif field == 'phone_number' %}
+                                        <a href="tel:{{ value }}" class="phone-link">
+                                            <i class="fas fa-phone"></i> {{ value }}
+                                        </a>
+                                    {% elif field == 'google_map_url' and value %}
+                                        <a href="{{ value }}" target="_blank" class="map-link">
+                                            <i class="fas fa-map-marked-alt"></i> Xem trên Google Map
+                                        </a>
+                                    {% elif field == 'active' %}
+                                        <div class="boolean-value {% if value %}true{% else %}false{% endif %}">
+                                            {% if value %}
+                                                <i class="fas fa-check-circle"></i> Đang hoạt động
+                                            {% else %}
+                                                <i class="fas fa-times-circle"></i> Không hoạt động
+                                            {% endif %}
+                                        </div>
+                                    {% elif field|startswith:'has_' %}
+                                        <div class="boolean-value {% if value %}true{% else %}false{% endif %}">
+                                            {% if value %}
+                                                <i class="fas fa-check-circle"></i> Có
+                                            {% else %}
+                                                <i class="fas fa-times-circle"></i> Không
+                                            {% endif %}
+                                        </div>
+                                    {% elif 'branches' in field and value|length > 30 %}
+                                        <ul class="many-to-many-list">
+                                            {% for item in value|split:"," %}
+                                                <li class="many-to-many-item">
+                                                    <i class="fas fa-building"></i> {{ item|trim }}
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% elif value|length > 100 %}
+                                        <div style="white-space: pre-wrap;">{{ value }}</div>
+                                    {% elif "price" in field|lower or "tiền" in field|lower %}
+                                        <div class="price-display">{{ value }}</div>
+                                    {% else %}
+                                        {{ value }}
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                {% if fieldset.0 == "Tiện ích - Chung" or fieldset.0 == "Tiện ích - Bãi đỗ xe và Di chuyển" or fieldset.0 == "Tiện ích - Khác" %}
+                    <div class="amenity-list">
+                        {% for field in fieldset.1.fields %}
+                            {% if field in object_data %}
+                                {% with value=object_data|get_item:field %}
+                                <div class="amenity-item {% if not value %}inactive{% endif %}">
+                                    {% if value %}
+                                        <i class="fas fa-check"></i>
+                                    {% else %}
+                                        <i class="fas fa-times"></i>
+                                    {% endif %}
+                                    {{ field_labels|get_item:field }}
+                                </div>
+                                {% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            {% for inline in inlines %}
+                <div class="inline-group">
+                    <h2>{{ inline.verbose_name_plural }}</h2>
+                    
+                    <div class="detail-inline-items">
+                        {% for item in inline.items %}
+                            <div class="detail-inline-item">
+                                <div class="field-grid">
+                                    {% for field_name, field_value in item.items %}
+                                        <div class="read-only-field">
+                                            <label>{{ field_name }}</label>
+                                            <div class="readonly {% if 'price' in field_name.lower or 'tiền' in field_name.lower %}price-display{% endif %}">
+                                                {{ field_value }}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+            
+            {% if related_objects %}
+                <div class="related-objects-section">
+                    <h2>Đối tượng liên kết</h2>
+                    
+                    {% for related in related_objects %}
+                        <div class="detail-fieldset related-object-fieldset">
+                            <legend>{{ related.model_name }} ({{ related.count }})</legend>
+                            
+                            {% if related.items %}
+                                <table class="related-objects-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Tên</th>
+                                            <th class="actions-col">Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in related.items %}
+                                            <tr>
+                                                <td>{{ item }}</td>
+                                                <td class="actions-col">
+                                                    {% if item.pk and item|is_model_object %}
+                                                        {% with app_label=item|get_app_label model_name=item|get_model_name %}
+                                                        {% if app_label and model_name %}
+                                                            {% with admin_url_name='admin:'|add:app_label|add:'_'|add:model_name %}
+                                                            {% with detail_url_name='custom_admin:object_detail' %}
+                                                            
+                                                            {% if model_name == 'classtypeprice' %}
+                                                                <!-- ClassTypePrice cần xử lý riêng -->
+                                                                <a href="{% url 'admin:classes_classtypeprice_change' item.pk %}" class="related-action edit-action">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </a>
+                                                                <a href="/custom_admin/detail/classes/classtypeprice/{{ item.pk }}/" class="related-action view-action">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </a>
+                                                            {% else %}
+                                                                <!-- Các đối tượng khác dùng URL bình thường -->
+                                                                <a href="{% url admin_url_name|add:'_change' item.pk %}" class="related-action edit-action">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </a>
+                                                                <a href="{% url detail_url_name app_label model_name item.pk %}" class="related-action view-action">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </a>
+                                                            {% endif %}
+                                                            
+                                                            {% endwith %}
+                                                            {% endwith %}
+                                                        {% endif %}
+                                                        {% endwith %}
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                
+                                {% if related.count > related.items|length %}
+                                    <div class="more-link">
+                                        <a href="{{ related.list_url }}?{% if related.field_name %}{{ related.field_name }}__id__exact={{ object.pk }}{% endif %}" class="see-all-link">
+                                            <i class="fas fa-list"></i> Xem tất cả {{ related.count }} {{ related.model_name }}
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <p>Không có {{ related.model_name }} nào.</p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="detail-actions">
+                <a href="{% url opts|admin_urlname:'changelist' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> {% trans "Quay lại danh sách" %}
+                </a>
+                <a href="{% url opts|admin_urlname:'change' object.pk %}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> {% trans "Chỉnh sửa" %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block sidebar %}
+{% if not is_popup %}
+  <div id="content-related">
+    <div class="module">
+      <h2>{% trans 'Thao tác' %}</h2>
+      <ul class="action-list">
+        {% if has_change_permission %}
+        <li>
+          <a href="{% url opts|admin_urlname:'change' object.pk %}" class="sidebar-action edit-action">
+            <i class="fas fa-edit"></i> {% trans "Sửa" %}
+          </a>
+        </li>
+        {% endif %}
+        {% if has_delete_permission %}
+        <li>
+          <a href="{% url opts|admin_urlname:'delete' object.pk %}" class="sidebar-action delete-action">
+            <i class="fas fa-trash"></i> {% trans "Xóa" %}
+          </a>
+        </li>
+        {% endif %}
+        {% if has_view_permission %}
+        <li>
+          <a href="{% url opts|admin_urlname:'history' object.pk %}" class="sidebar-action history-action">
+            <i class="fas fa-history"></i> {% trans "Lịch sử" %}
+          </a>
+        </li>
+        {% endif %}
+        {% if has_add_permission %}
+        <li>
+          <a href="{% url opts|admin_urlname:'add' %}" class="sidebar-action add-action">
+            <i class="fas fa-plus"></i> {% trans "Thêm mới" %}
+          </a>
+        </li>
+        {% endif %}
+        <li>
+          <a href="{% url opts|admin_urlname:'changelist' %}" class="sidebar-action list-action">
+            <i class="fas fa-list"></i> {% trans "Danh sách" %}
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    {% if related_objects %}
+    <div class="module">
+      <h2>{% trans 'Liên kết' %}</h2>
+      <ul class="related-list">
+        {% for related in related_objects %}
+        <li>
+          <a href="{{ related.list_url }}?{% if related.field_name %}{{ related.field_name }}__id__exact={{ object.pk }}{% endif %}" class="sidebar-action">
+            <i class="fas fa-link"></i> {{ related.model_name }} ({{ related.count }})
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %} 

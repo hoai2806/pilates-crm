@@ -1,0 +1,526 @@
+/* Custom styling for checkbox select multiple widget */
+.field-branches ul {
+    list-style-type: none;
+    padding-left: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.field-branches ul li {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 15px;
+    margin-bottom: 5px;
+    transition: all 0.3s ease;
+}
+
+.field-branches ul li:hover {
+    background-color: #f0f0f0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.field-branches ul li label {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.field-branches ul li input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+/* Checked state */
+.field-branches ul li input[type="checkbox"]:checked + label {
+    font-weight: bold;
+}
+
+.field-branches ul li input[type="checkbox"]:checked {
+    background-color: #e6f3ff;
+    border-color: #80bdff;
+}
+
+/* Compatibility selector for browsers that don't support :has */
+.field-branches ul li.selected {
+    background-color: #e6f3ff;
+    border-color: #80bdff;
+}
+
+/* Price table styling */
+.inline-group .tabular tr.form-row td.field-get_total_price {
+    font-weight: bold;
+    color: #0066cc;
+    text-align: right;
+}
+
+.inline-group .tabular tr.form-row:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.inline-group .tabular tr.form-row td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Header styling */
+.inline-group .tabular tr.form-row th {
+    background-color: #f4f4f4;
+    padding: 12px 10px;
+    font-weight: bold;
+}
+
+/* Help text styling */
+.field-branches .help-text {
+    font-style: italic;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Price input styling */
+.price-format {
+    text-align: right;
+    font-family: monospace;
+    width: 100%;
+    font-size: 14px;
+    padding: 8px 12px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+}
+
+.price-format:focus {
+    border-color: #80bdff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+}
+
+/* Bảng giá header */
+.inline-group .tabular tr.form-row th.column-unit_price,
+.inline-group .tabular tr.form-row th.column-get_total_price {
+    text-align: right;
+}
+
+.inline-group .tabular tr.form-row td.field-unit_price {
+    text-align: right;
+    font-family: monospace;
+    font-size: 14px;
+    color: #333;
+}
+
+.field-unit_price input[type="number"] {
+    text-align: right;
+}
+
+.field-unit_price input.vTextField {
+    font-family: monospace;
+    font-weight: 500;
+    color: #333;
+}
+
+.vTextField.price-format::after {
+    content: "vnđ";
+    margin-left: 5px;
+    color: #999;
+}
+
+/* Styling for health information section */
+.health-info {
+    background-color: #f8f9fa;
+    border-left: 4px solid #28a745;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.health-info .form-row {
+    margin-bottom: 0;
+}
+
+/* Styling for health documents inline */
+#healthdocument_set-group {
+    margin-top: 0;
+    border-top: none;
+}
+
+#healthdocument_set-group h2 {
+    background-color: #f8f9fa;
+    border-left: 4px solid #28a745;
+    padding: 10px 15px;
+    font-size: 14px;
+    color: #495057;
+}
+
+/* Styling for customer activities */
+#customeractivity_set-group {
+    margin-top: 20px;
+    border-top: 2px solid #007bff;
+}
+
+#customeractivity_set-group h2 {
+    background-color: #e6f3ff;
+    border-left: 4px solid #007bff;
+    padding: 10px 15px;
+    font-size: 14px;
+    color: #0056b3;
+}
+
+.field-timestamp {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* === General Typography & Colors === */
+body, .main-sidebar, .main-footer {
+    font-family: "Be Vietnam Pro", "Roboto", "Open Sans", "Helvetica Neue", sans-serif !important;
+    font-size: 14px !important; /* Giảm kích thước font chữ chung */
+    color: #333;
+}
+
+h1, h2, h3, h4, h5, h6,
+.content-header h1 { /* Django admin content header */
+    color: #6f42c1; /* Màu tím cho các tiêu đề */
+    font-family: "Be Vietnam Pro", "Roboto", "Open Sans", "Helvetica Neue", sans-serif !important;
+}
+
+a {
+    color: #6f42c1; /* Màu tím cho các liên kết */
+}
+
+a:hover {
+    color: #59359a; /* Màu tím đậm hơn khi hover */
+}
+
+/* === Main Header (Top Bar) - Jazzmin Specific === */
+.main-header.navbar {
+    background-color: #6f42c1 !important; /* Màu tím cho header chính */
+}
+
+.main-header.navbar .nav-link {
+    color: #f8f9fa !important; /* Màu chữ sáng hơn cho các mục menu */
+}
+.main-header.navbar .nav-link:hover {
+    color: #fff !important;
+    background-color: #59359a !important;
+}
+
+.main-header .navbar-brand img, .brand-link img { /* Logo in header */
+    max-height: 35px !important; /* Giảm chiều cao logo một chút cho thanh mảnh hơn */
+    width: auto !important;
+    margin-right: 10px;
+    margin-left: 5px; /* Thêm chút lề trái */
+}
+.brand-text {
+    color: #fff !important;
+}
+
+
+/* === Sidebar - Jazzmin Specific === */
+.main-sidebar.sidebar-dark-primary { /* Assuming dark sidebar, adjust if light */
+    background-color: #f4f6f9 !important; /* Màu nền sáng hơn cho sidebar */
+}
+
+.main-sidebar .nav-pills .nav-link {
+    color: #333 !important; /* Màu chữ tối hơn cho dễ đọc trên nền sáng */
+    font-weight: 500;
+}
+
+.main-sidebar .nav-pills .nav-link.active,
+.main-sidebar .nav-pills .nav-link:hover,
+.main-sidebar .nav-pills .nav-item.menu-is-opening > .nav-link, /* Active parent */
+.main-sidebar .nav-pills .nav-item > .nav-link:hover {
+    background-color: #6f42c1 !important;
+    color: #fff !important;
+}
+.main-sidebar .nav-treeview > .nav-item > .nav-link { /* Submenu items */
+    color: #555 !important;
+}
+.main-sidebar .nav-treeview > .nav-item > .nav-link.active,
+.main-sidebar .nav-treeview > .nav-item > .nav-link:hover {
+    background-color: #e0d7f5 !important; /* Lighter purple for submenu active/hover */
+    color: #6f42c1 !important;
+}
+
+
+/* === Buttons === */
+.btn {
+    border-radius: 0.25rem;
+    padding: 0.45rem 0.9rem; /* Điều chỉnh padding chút */
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background-color: #e85298; /* Màu hồng thương hiệu */
+    border-color: #e85298;
+    color: #fff !important; /* Quan trọng để ghi đè style khác */
+}
+.btn-primary:hover {
+    background-color: #d43f80;
+    border-color: #d43f80;
+    color: #fff !important;
+}
+
+.btn-secondary, .btn-default { /* .btn-default is common in Django admin */
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff !important;
+}
+.btn-secondary:hover, .btn-default:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    color: #fff !important;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: #fff !important;
+}
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+    color: #fff !important;
+}
+
+.btn-info {
+    background-color: #6f42c1; /* Màu tím */
+    border-color: #6f42c1;
+    color: #fff !important;
+}
+.btn-info:hover {
+    background-color: #59359a;
+    border-color: #59359a;
+    color: #fff !important;
+}
+.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529 !important;
+}
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+    color: #212529 !important;
+}
+.btn-danger, .deletelink { /* .deletelink is Django's delete button */
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: #fff !important;
+}
+.btn-danger:hover, .deletelink:hover {
+    background-color: #c82333 !important;
+    border-color: #bd2130 !important;
+    color: #fff !important;
+}
+
+
+/* === Card Styling === */
+.card {
+    border-left: 3px solid #6f42c1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    color: #6f42c1;
+    font-weight: 600;
+}
+
+/* === Form inputs === */
+.form-control, .form-control:focus, .vTextField, .vLargeTextField, .vBigTextField { /* Django admin text fields */
+    font-size: 14px !important;
+    border-radius: 0.25rem !important;
+    border: 1px solid #ced4da !important;
+}
+.form-control:focus, .vTextField:focus, .vLargeTextField:focus, .vBigTextField:focus {
+    border-color: #6f42c1 !important;
+    box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25) !important;
+}
+select.form-control, select.vSelectField { /* Django admin select */
+     height: calc(2.25rem + 2px) !important; /* Align height with text inputs */
+}
+
+
+/* === Table Styling === */
+.table thead th {
+    background-color: #f8f9fa;
+    color: #343a40; /* Đổi màu chữ header bảng */
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+}
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(111, 66, 193, 0.04); /* Sọc tím rất nhạt */
+}
+.table td, .table th {
+    vertical-align: middle; /* Căn giữa theo chiều dọc */
+}
+
+/* === Django Admin Specific - General === */
+.module h2, .module caption, .inline-group h2 { /* Module headers */
+    background: #6f42c1 !important;
+    color: #fff !important;
+    font-size: 1rem !important;
+    padding: 0.75rem 1.25rem !important;
+}
+
+.breadcrumbs {
+    background-color: #f7f3fc !important;
+    padding: 10px 15px !important;
+    border-bottom: 1px solid #e0d7f5;
+}
+.breadcrumbs a {
+    color: #6f42c1;
+}
+
+/* Action buttons on top of changelist */
+.object-tools a.addlink, .object-tools a.changelink {
+    background-color: #e85298; /* Màu hồng cho nút Add */
+    color: #fff !important;
+    padding: 8px 12px;
+    border-radius: 0.25rem;
+    line-height: normal;
+}
+.object-tools a.addlink:hover, .object-tools a.changelink:hover {
+    background-color: #d43f80;
+}
+.actions .button, .actions input[type="submit"] { /* Bulk actions dropdown button */
+    background-color: #6c757d !important;
+    color: #fff !important;
+    border-color: #6c757d !important;
+}
+.actions .button:hover, .actions input[type="submit"]:hover {
+    background-color: #5a6268 !important;
+    border-color: #545b62 !important;
+}
+
+
+/* Submit buttons at the bottom of forms (Django admin) */
+.submit-row input[type="submit"], .submit-row input[type="button"], .submit-row .button {
+    background: #e85298 !important; /* Màu hồng */
+    color: #fff !important;
+    border-radius: 0.25rem !important;
+    padding: 10px 20px !important; /* Tăng padding */
+    font-size: 15px !important;
+}
+.submit-row input[type="submit"]:hover, .submit-row input[type="button"]:hover, .submit-row .button:hover {
+    background: #d43f80 !important; /* Hồng đậm hơn */
+}
+.submit-row .button.default { /* Nút "Save and add another" */
+    background: #6f42c1 !important; /* Màu tím */
+}
+.submit-row .button.default:hover {
+    background: #59359a !important;
+}
+.submit-row .deletelink-box .button.deletelink, .submit-row .deletelink {
+    background: #dc3545 !important;
+    padding: 10px 20px !important;
+    font-size: 15px !important;
+}
+
+/* === Login Page Styling (Jazzmin) === */
+body.login-page {
+    background-color: #f4f6f9 !important; /* Nền sáng hơn cho trang login */
+}
+.login-box {
+    border-top: 5px solid #6f42c1; /* Viền tím */
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1); /* Tăng shadow chút */
+    border-radius: 0.3rem; /* Bo góc nhẹ */
+}
+.login-logo {
+    text-align: center; /* Đảm bảo logo được căn giữa */
+    padding-top: 10px; /* Thêm padding trên cho logo */
+}
+.login-logo a, .register-logo a {
+    color: #6f42c1 !important;
+    font-weight: bold;
+    font-size: 2rem !important; /* Giảm kích thước chữ nếu có text logo */
+}
+.login-logo img, .register-logo img { /* Logo on login page */
+    max-width: 230px;  /* Kích thước tối đa cho logo, giữ cho không quá to */
+    max-height: 80px; /* Giảm chiều cao tối đa của logo */
+    height: auto;      /* Duy trì tỷ lệ khung hình */
+    margin-bottom: 20px;
+    display: inline-block;
+}
+.login-card-body .btn.btn-primary, .register-card-body .btn.btn-primary { /* Nút login/register */
+    background-color: #e85298 !important; /* Màu hồng thương hiệu cho nút chính */
+    border-color: #e85298 !important;
+    color: #fff !important;
+    padding: 10px 20px;
+    font-size: 16px;
+    width: 100%; /* Nút chiếm toàn bộ chiều rộng */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.login-card-body .btn.btn-primary:hover, .register-card-body .btn.btn-primary:hover {
+    background-color: #d43f80 !important; /* Hồng đậm hơn khi hover */
+    border-color: #d43f80 !important;
+    color: #fff !important;
+}
+.login-card-body .input-group .form-control { /* Style cho input fields */
+    border-right: none; /* Bỏ border phải nếu có icon dính liền */
+}
+.login-card-body .input-group .input-group-text { /* Style cho icon trong input group */
+    background-color: #fff;
+    border-left: none;
+}
+.login-page .card-primary.card-outline { /* Đảm bảo màu viền card login nhất quán */
+    border-top-color: #6f42c1 !important;
+}
+
+/* Alert messages */
+.message { /* Django admin messages */
+    background-color: #f7f3fc;
+    border-left: 5px solid #6f42c1;
+    padding: 15px;
+    color: #59359a;
+}
+.message.success {
+    border-left-color: #28a745;
+    background-color: #e9f5ec;
+    color: #218838;
+}
+.message.warning {
+    border-left-color: #ffc107;
+    background-color: #fff8e1;
+    color: #e0a800;
+}
+.message.error {
+    border-left-color: #dc3545;
+    background-color: #fbeae9;
+    color: #c82333;
+}
+
+/* Calendar Page specific adjustments from previous steps if any, e.g., button above calendar */
+/* No specific calendar button re-styling here unless overriding general button styles is needed */
+
+/* Fix for potential white text on white background in Select2 dropdown items (Jazzmin specific) */
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #6f42c1 !important;
+    color: white !important;
+}
+.select2-container--default .select2-results__option {
+    color: #333; /* Ensure text is visible */
+}
+
+/* Ensure custom admin CSS is loaded after theme CSS */
+/* This is usually handled by the order of CSS inclusion in base templates */
+
+/* === Hide Top Menu === */
+.main-header.navbar {
+    display: none !important;
+}
+
+.content-wrapper {
+    /* Adjust margin since top navbar is gone.
+       The original value might depend on whether the layout is boxed or sidebar is fixed.
+       0 is a common reset. Inspect element if further adjustment is needed. */
+    margin-top: 0 !important; 
+}
+
+/* If using a fixed sidebar, ensure it starts from the top */
+body.sidebar-fixed .main-sidebar {
+    padding-top: 0 !important;
+} 

@@ -1,0 +1,126 @@
+{% extends 'reback/layout.html' %}
+{% load i18n %}
+
+{% block title %}Huấn luyện viên{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Huấn luyện viên</li>
+{% endblock %}
+
+{% block page_heading %}Huấn luyện viên{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Danh sách huấn luyện viên</h5>
+        <div>
+            <a href="#" class="btn btn-primary btn-sm">
+                <i class="ri-add-line"></i> Thêm huấn luyện viên
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Tìm kiếm huấn luyện viên...">
+                    <button class="btn btn-primary" type="button">
+                        <i class="ri-search-line"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select">
+                    <option>Tất cả trạng thái</option>
+                    <option>Đang hoạt động</option>
+                    <option>Không hoạt động</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="row">
+            {% if instructors %}
+                {% for instructor in instructors %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                {% if instructor.profile_image %}
+                                    <img src="{{ instructor.profile_image.url }}" class="rounded-circle mb-3" width="120" height="120" alt="{{ instructor.full_name }}">
+                                {% else %}
+                                    <div class="bg-primary text-white rounded-circle mb-3 d-flex align-items-center justify-content-center mx-auto" style="width: 120px; height: 120px; font-size: 48px;">
+                                        {{ instructor.full_name|slice:":1" }}
+                                    </div>
+                                {% endif %}
+                                <h5 class="card-title">{{ instructor.full_name }}</h5>
+                                <p class="card-text text-muted">{{ instructor.specialty }}</p>
+                                <div class="mb-3">
+                                    {% if instructor.active %}
+                                        <span class="badge bg-success">Đang hoạt động</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Không hoạt động</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <p class="text-muted mb-1"><i class="ri-phone-line me-2"></i>{{ instructor.phone }}</p>
+                                    <p class="text-muted mb-1"><i class="ri-mail-line me-2"></i>{{ instructor.email }}</p>
+                                </div>
+                                <div class="mt-3">
+                                    <a href="#" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="ri-eye-line"></i> Chi tiết
+                                    </a>
+                                    <a href="#" class="btn btn-sm btn-outline-success me-1">
+                                        <i class="ri-edit-line"></i> Sửa
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center py-5">
+                    <p>Không có dữ liệu huấn luyện viên</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if instructors.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if instructors.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ instructors.previous_page_number }}">Trước</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">Trước</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for i in instructors.paginator.page_range %}
+                        {% if instructors.number == i %}
+                            <li class="page-item active">
+                                <a class="page-link" href="#">{{ i }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if instructors.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ instructors.next_page_number }}">Tiếp</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">Tiếp</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock content %} 

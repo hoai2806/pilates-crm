@@ -1,0 +1,297 @@
+{% extends 'reback/layout.html' %}
+{% load i18n %}
+
+{% block title %}Lịch học{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Lịch học</li>
+{% endblock %}
+
+{% block page_heading %}Lịch học{% endblock %}
+
+{% block content %}
+<!-- Dashboard Lịch học -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card d-flex align-items-center">
+            <div class="me-3">
+                <div class="stats-card-icon bg-primary-light">
+                    <i class="ri-calendar-line"></i>
+                </div>
+            </div>
+            <div>
+                <h6 class="stats-card-title">Tổng số lịch học</h6>
+                <h4 class="stats-card-value">{{ total_schedules }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card d-flex align-items-center">
+            <div class="me-3">
+                <div class="stats-card-icon bg-success-light">
+                    <i class="ri-calendar-check-line"></i>
+                </div>
+            </div>
+            <div>
+                <h6 class="stats-card-title">Đã lên lịch</h6>
+                <h4 class="stats-card-value">{{ scheduled_classes }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card d-flex align-items-center">
+            <div class="me-3">
+                <div class="stats-card-icon bg-danger-light">
+                    <i class="ri-calendar-close-line"></i>
+                </div>
+            </div>
+            <div>
+                <h6 class="stats-card-title">Đã hủy</h6>
+                <h4 class="stats-card-value">{{ cancelled_classes }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card d-flex align-items-center">
+            <div class="me-3">
+                <div class="stats-card-icon bg-info-light">
+                    <i class="ri-calendar-todo-line"></i>
+                </div>
+            </div>
+            <div>
+                <h6 class="stats-card-title">Đã hoàn thành</h6>
+                <h4 class="stats-card-value">{{ completed_classes }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Danh sách lịch học</h5>
+                <div>
+                    <a href="#" class="btn btn-primary btn-sm">
+                        <i class="ri-add-line"></i> Thêm lịch học
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Tìm kiếm lịch học...">
+                            <button class="btn btn-primary" type="button">
+                                <i class="ri-search-line"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select">
+                            <option>Tất cả loại lớp</option>
+                            <option>Cá nhân</option>
+                            <option>Nhóm</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select">
+                            <option>Tất cả huấn luyện viên</option>
+                            <option>Huấn luyện viên 1</option>
+                            <option>Huấn luyện viên 2</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Thời gian</th>
+                                <th>Loại lớp</th>
+                                <th>Huấn luyện viên</th>
+                                <th>Phòng</th>
+                                <th>Số học viên</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if schedules %}
+                                {% for schedule in schedules %}
+                                    <tr>
+                                        <td>{{ schedule.specific_date|date:"d/m/Y" }}</td>
+                                        <td>{{ schedule.start_time|date:"H:i" }} - {{ schedule.end_time|date:"H:i" }}</td>
+                                        <td>{{ schedule.class_type.name }}</td>
+                                        <td>{{ schedule.instructor.full_name }}</td>
+                                        <td>{{ schedule.room }}</td>
+                                        <td>{{ schedule.attendances.count }}/{{ schedule.max_students }}</td>
+                                        <td>
+                                            {% if schedule.status == 'scheduled' %}
+                                                <span class="badge bg-success">Đã lên lịch</span>
+                                            {% elif schedule.status == 'cancelled' %}
+                                                <span class="badge bg-danger">Đã hủy</span>
+                                            {% elif schedule.status == 'completed' %}
+                                                <span class="badge bg-info">Đã hoàn thành</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-outline-primary me-1">
+                                                <i class="ri-eye-line"></i>
+                                            </a>
+                                            <a href="#" class="btn btn-sm btn-outline-success me-1">
+                                                <i class="ri-edit-line"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center">Không có dữ liệu lịch học</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if schedules.has_other_pages %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if schedules.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ schedules.previous_page_number }}">Trước</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1">Trước</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for i in schedules.paginator.page_range %}
+                                {% if schedules.number == i %}
+                                    <li class="page-item active">
+                                        <a class="page-link" href="#">{{ i }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if schedules.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ schedules.next_page_number }}">Tiếp</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1">Tiếp</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Huấn luyện viên có lịch trong tuần này -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Huấn luyện viên có lịch trong tuần</h5>
+            </div>
+            <div class="card-body">
+                {% if instructors_this_week %}
+                    <div class="instructor-list">
+                        {% for instructor in instructors_this_week %}
+                            <div class="instructor-item d-flex align-items-center mb-3">
+                                {% if instructor.profile_image %}
+                                    <img src="{{ instructor.profile_image.url }}" class="rounded-circle me-3" width="50" height="50" alt="{{ instructor.full_name }}">
+                                {% else %}
+                                    <div class="bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 20px;">
+                                        {{ instructor.full_name|slice:":1" }}
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <h6 class="mb-0">{{ instructor.full_name }}</h6>
+                                    <p class="text-muted mb-0">{{ instructor.specialty }}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center py-3">Không có huấn luyện viên có lịch dạy trong tuần này</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lịch học hàng tuần -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Lịch học hàng tuần</h5>
+        <div>
+            <button class="btn btn-sm btn-outline-primary me-1">
+                <i class="ri-arrow-left-line"></i> Tuần trước
+            </button>
+            <button class="btn btn-sm btn-outline-primary">
+                Tuần tới <i class="ri-arrow-right-line"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th width="12%">Thời gian</th>
+                        <th width="12%">Thứ Hai</th>
+                        <th width="12%">Thứ Ba</th>
+                        <th width="12%">Thứ Tư</th>
+                        <th width="12%">Thứ Năm</th>
+                        <th width="12%">Thứ Sáu</th>
+                        <th width="12%">Thứ Bảy</th>
+                        <th width="12%">Chủ Nhật</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>07:00 - 08:00</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>08:00 - 09:00</td>
+                        <td class="bg-primary bg-opacity-10 text-primary">
+                            Yoga cơ bản<br>
+                            <small>Phòng 1 - Mai Anh</small>
+                        </td>
+                        <td></td>
+                        <td class="bg-success bg-opacity-10 text-success">
+                            Pilates Reformer<br>
+                            <small>Phòng 2 - Minh Tú</small>
+                        </td>
+                        <td></td>
+                        <td class="bg-primary bg-opacity-10 text-primary">
+                            Yoga cơ bản<br>
+                            <small>Phòng 1 - Mai Anh</small>
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <!-- Thêm các hàng thời gian khác tương tự -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %} 

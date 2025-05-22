@@ -1,0 +1,218 @@
+{% extends 'reback/layout.html' %}
+{% load i18n %}
+{% load static %}
+{% load mathfilters %}
+{% load custom_filters %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'reback:index' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reback:customers' %}">Khách hàng</a></li>
+<li class="breadcrumb-item active">{{ customer.full_name }}</li>
+{% endblock %}
+
+{% block page_heading %}
+<div class="d-flex justify-content-between align-items-center">
+    <h4 class="mb-0">{{ customer.full_name }}</h4>
+    <div>
+        <a href="{% url 'reback:customer_edit' customer.pk %}" class="btn btn-success">
+            Sửa
+        </a>
+        <a href="{% url 'reback:customer_delete' customer.pk %}" class="btn btn-danger">
+            Xóa
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="text-center mb-3">
+                    {% if customer.profile_image %}
+                        <img src="{{ customer.profile_image.url }}" alt="{{ customer.full_name }}" class="rounded-circle img-fluid" style="width: 80px; height: 80px; object-fit: cover;">
+                    {% else %}
+                        <div style="width: 80px; height: 80px; line-height: 80px; background-color: #4e73df; color: white; font-size: 40px; border-radius: 50%; display: inline-block;">
+                            {{ customer.full_name|slice:":1"|upper }}
+                        </div>
+                    {% endif %}
+                </div>
+                <h4 class="text-center">{{ customer.full_name }}</h4>
+                <p class="text-center mb-1">Trạng thái: <span class="badge bg-info">{{ customer.get_status_display }}</span></p>
+                <p class="text-center mb-1">{{ customer.phone }}</p>
+                <p class="text-center mb-1">Nguồn: {{ customer.get_source_display|default:"Không rõ" }}</p>
+                <p class="text-center mb-1">Ngày đăng ký: {{ customer.registration_date|date:"d/m/Y" }}</p>
+                <p class="text-center mb-1">Giới tính: {{ customer.get_gender_display|default:"N/A" }}</p>
+            </div>
+            <div class="col-md-9">
+                <h5 class="mb-3">Thông tin chi tiết</h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th style="width: 25%;">Họ và tên:</th>
+                                <td>{{ customer.full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Số điện thoại:</th>
+                                <td>{{ customer.phone|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Email:</th>
+                                <td>N/A</td> {# Model Customer hiện tại không có trường email #}
+                            </tr>
+                            <tr>
+                                <th>Địa chỉ:</th>
+                                <td>{{ customer.address|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Ngày sinh:</th>
+                                <td>{% if customer.date_of_birth %}{{ customer.date_of_birth|date:"d/m/Y" }} ({{ customer.get_age|default:"N/A" }} tuổi){% else %}N/A{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <th>Giới tính:</th>
+                                <td>{{ customer.get_gender_display|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Ngày đăng ký:</th>
+                                <td>{{ customer.registration_date|date:"d/m/Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Liên hệ khẩn cấp:</th>
+                                <td>{{ customer.emergency_contact|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Vấn đề sức khỏe:</th>
+                                <td>{{ customer.health_issues|default:"N/A"|linebreaksbr }}</td>
+                            </tr>
+                            {% if customer.parent_name %}
+                            <tr>
+                                <th>Tên bố/mẹ:</th>
+                                <td>{{ customer.parent_name }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if customer.parent_phone %}
+                            <tr>
+                                <th>SĐT bố/mẹ:</th>
+                                <td>{{ customer.parent_phone }}</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if customer.notes %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Ghi chú chung</h5>
+        <p>{{ customer.notes|linebreaksbr }}</p>
+    </div>
+</div>
+{% endif %}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Lịch sử mua hàng</h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Ngày mua</th>
+                        <th>Loại lớp</th>
+                        <th>Gói (buổi)</th>
+                        <th>Giá</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày bắt đầu</th>
+                        <th>Ngày kết thúc</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if purchase_history %}
+                        {% for package in purchase_history %}
+                        <tr>
+                            <td>{{ package.purchase_date|date:"d/m/Y" }}</td>
+                            <td>{{ package.class_type.name }}</td>
+                            <td>{{ package.total_sessions }} (còn {{ package.remaining_sessions }})</td>
+                            <td>{{ package.payment.final_amount|default:package.class_type.prices.first.total_price|floatformat:"0"|intcomma }} đ</td>
+                            <td><span class="badge {% if package.status == 'active' %}bg-success{% elif package.status == 'completed' %}bg-primary{% elif package.status == 'expired' %}bg-warning{% else %}bg-secondary{% endif %}">{{ package.get_status_display }}</span></td>
+                            <td>{{ package.start_date|date:"d/m/Y" }}</td>
+                            <td>{% if package.end_date %}{{ package.end_date|date:"d/m/Y" }}{% else %}N/A{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">Chưa có lịch sử mua hàng</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Lịch sử đi tập</h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Ngày học</th>
+                        <th>Buổi học</th>
+                        <th>HLV</th>
+                        <th>Trạng thái</th>
+                        <th>Gói sử dụng</th>
+                        <th>Ghi chú điểm danh</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if attendance_history %}
+                        {% for attendance in attendance_history %}
+                        <tr>
+                            <td>{% if attendance.class_session.specific_date %}{{ attendance.class_session.specific_date|date:"d/m/Y" }} {{ attendance.class_session.start_time|time:"H:i" }}{% else %}N/A{% endif %}</td>
+                            <td>{{ attendance.class_session.class_type.name }}</td>
+                            <td>{{ attendance.class_session.instructor.full_name|default:"N/A" }}</td>
+                            <td>{% if attendance.attended %}<span class="badge bg-success">Đã tham dự</span>{% elif attendance.status == 'absent_notified' %}<span class="badge bg-warning">Vắng (báo trước)</span>{% elif attendance.status == 'absent_unnotified' %}<span class="badge bg-danger">Vắng (không báo)</span>{% else %}<span class="badge bg-secondary">Chưa điểm danh</span>{% endif %}</td>
+                            <td>{% if attendance.customer_package %}{{ attendance.customer_package.class_type.name }} ({{ attendance.customer_package.purchase_date|date:"d/m" }}){% else %}N/A{% endif %}</td>
+                            <td>{{ attendance.notes|default:"" }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">Chưa có lịch sử đi tập</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if activity_history %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Hoạt động & Ghi chú khác</h5>
+        <ul class="list-unstyled mb-0">
+            {% for activity in activity_history %}
+            <li class="mb-3 pb-2 border-bottom">
+                <div class="d-flex">
+                    <div class="flex-grow-1">
+                        <p class="mb-0">{{ activity.content|linebreaksbr }}</p>
+                        <small class="text-muted">{{ activity.timestamp|date:"d/m/Y H:i" }} {% if activity.user %}- {{ activity.user.username }}{% endif %}</small>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 

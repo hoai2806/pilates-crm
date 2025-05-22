@@ -1,0 +1,316 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Danh sách đơn hàng - HD Pilates Studio{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+  .payment-list-container {
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .search-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .search-box {
+    flex: 1;
+    min-width: 250px;
+  }
+  .filter-box {
+    min-width: 150px;
+  }
+  .date-range {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .date-range input {
+    width: 130px;
+  }
+  .payment-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .payment-table th, .payment-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .payment-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+  }
+  .payment-table tr:hover {
+    background-color: #f5f5f5;
+  }
+  .payment-status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .status-pending {
+    background-color: #ffeeba;
+    color: #856404;
+  }
+  .status-completed {
+    background-color: #d4edda;
+    color: #155724;
+  }
+  .status-failed {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+  .status-refunded {
+    background-color: #d1ecf1;
+    color: #0c5460;
+  }
+  .action-buttons {
+    display: flex;
+    gap: 5px;
+  }
+  .summary-box {
+    background-color: #e9f7ef;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .total-amount {
+    font-size: 24px;
+    font-weight: bold;
+    color: #16a085;
+  }
+  .date-label {
+    color: #666;
+    font-size: 14px;
+  }
+  .pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h1 class="page-title">Danh sách đơn hàng</h1>
+      
+      <div class="d-flex justify-content-end">
+        <a href="{% url 'payment_export_csv' %}" class="btn btn-outline-primary me-2">
+          <i class="fas fa-file-csv"></i> Xuất CSV
+        </a>
+        <a href="{% url 'payment_create' %}" class="btn btn-primary">
+          <i class="fas fa-plus"></i> Tạo đơn hàng mới
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <!-- Thống kê tổng quát -->
+      <div class="summary-box">
+        <div>
+          <div class="date-label">
+            {% if date_from and date_to %}
+              Doanh thu từ {{ date_from|date:"d/m/Y" }} đến {{ date_to|date:"d/m/Y" }}
+            {% elif date_from %}
+              Doanh thu từ {{ date_from|date:"d/m/Y" }}
+            {% elif date_to %}
+              Doanh thu đến {{ date_to|date:"d/m/Y" }}
+            {% else %}
+              Tổng doanh thu
+            {% endif %}
+          </div>
+          <div class="total-amount">{{ total_revenue|floatformat:0|intcomma }} đ</div>
+        </div>
+        
+        <div>
+          <span class="badge bg-info text-white">Tổng số: {{ payments.count }} đơn hàng</span>
+        </div>
+      </div>
+
+      <!-- Thanh tìm kiếm và lọc -->
+      <div class="search-filter-bar">
+        <form method="get" action="{% url 'payment_list' %}" class="d-flex flex-wrap w-100 gap-2">
+          <div class="search-box">
+            <div class="input-group">
+              <input type="text" name="search" class="form-control" placeholder="Tìm theo khách hàng hoặc số hóa đơn..." value="{{ search_query }}">
+              <button class="btn btn-primary" type="submit">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="filter-box">
+            <select name="status" class="form-select" onchange="this.form.submit()">
+              <option value="">-- Trạng thái --</option>
+              {% for value, label in statuses %}
+                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="date-range">
+            <input type="date" name="date_from" class="form-control flatpickr-date" placeholder="Từ ngày" value="{{ date_from|date:'Y-m-d' }}">
+            <span>-</span>
+            <input type="date" name="date_to" class="form-control flatpickr-date" placeholder="Đến ngày" value="{{ date_to|date:'Y-m-d' }}">
+            <button type="submit" class="btn btn-outline-secondary">
+              <i class="fas fa-filter"></i> Lọc
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Bảng danh sách đơn hàng -->
+      <div class="table-responsive">
+        <table class="payment-table">
+          <thead>
+            <tr>
+              <th>Số hóa đơn</th>
+              <th>Khách hàng</th>
+              <th>Dịch vụ</th>
+              <th>Ngày thanh toán</th>
+              <th>Tổng tiền</th>
+              <th>Thanh toán</th>
+              <th>Phương thức</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payment in payments %}
+              <tr>
+                <td>{{ payment.invoice_number }}</td>
+                <td>
+                  <a href="{% url 'dashboard:customer_detail' payment.customer.id %}">
+                    {{ payment.customer.full_name }}
+                  </a>
+                </td>
+                <td>
+                  {% if payment.class_type %}
+                    {{ payment.class_type.name }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td>{{ payment.payment_date|date:"d/m/Y" }}</td>
+                <td>{{ payment.amount|floatformat:0|intcomma }} đ</td>
+                <td><strong>{{ payment.final_amount|floatformat:0|intcomma }} đ</strong></td>
+                <td>
+                  {% for key, value in payment_methods %}
+                    {% if key == payment.payment_method %}{{ value }}{% endif %}
+                  {% endfor %}
+                </td>
+                <td>
+                  {% if payment.status == 'pending' %}
+                    <span class="payment-status status-pending">Đang chờ</span>
+                  {% elif payment.status == 'completed' %}
+                    <span class="payment-status status-completed">Hoàn thành</span>
+                  {% elif payment.status == 'failed' %}
+                    <span class="payment-status status-failed">Thất bại</span>
+                  {% elif payment.status == 'refunded' %}
+                    <span class="payment-status status-refunded">Hoàn tiền</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <a href="{% url 'payment_detail' payment.id %}" class="btn btn-sm btn-info" title="Xem chi tiết">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{% url 'payment_edit' payment.id %}" class="btn btn-sm btn-primary" title="Chỉnh sửa">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="9" class="text-center py-4">
+                  <p class="text-muted mb-0">Không có đơn hàng nào</p>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Phân trang -->
+      {% if payments.has_other_pages %}
+        <div class="pagination">
+          <ul class="pagination">
+            {% if payments.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}">
+                  <i class="fas fa-angle-double-left"></i>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ payments.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}">
+                  <i class="fas fa-angle-left"></i>
+                </a>
+              </li>
+            {% endif %}
+            
+            {% for num in payments.paginator.page_range %}
+              {% if payments.number == num %}
+                <li class="page-item active">
+                  <span class="page-link">{{ num }}</span>
+                </li>
+              {% elif num > payments.number|add:'-3' and num < payments.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}">
+                    {{ num }}
+                  </a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if payments.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ payments.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}">
+                  <i class="fas fa-angle-right"></i>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ payments.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from|date:'Y-m-d' }}{% endif %}{% if date_to %}&date_to={{ date_to|date:'Y-m-d' }}{% endif %}">
+                  <i class="fas fa-angle-double-right"></i>
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Khởi tạo flatpickr cho các trường ngày tháng
+    flatpickr('.flatpickr-date', {
+      dateFormat: 'Y-m-d',
+    });
+  });
+</script>
+{% endblock %} 

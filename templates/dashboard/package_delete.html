@@ -1,0 +1,89 @@
+{% extends "dashboard/base.html" %}
+
+{% load static %}
+
+{% block title %}Xóa gói tập - HD Pilates Studio{% endblock %}
+
+{% block extra_css %}
+<style>
+  .delete-container {
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .delete-title {
+    color: var(--danger-color, #dc3545);
+    font-weight: 500;
+    margin-bottom: 20px;
+  }
+  .package-info {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  .package-info p {
+    margin-bottom: 8px;
+  }
+  .package-info strong {
+    display: inline-block;
+    width: 140px;
+  }
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 30px;
+  }
+  .btn-delete {
+    background-color: var(--danger-color, #dc3545);
+    border-color: var(--danger-color, #dc3545);
+    color: white;
+  }
+  .btn-delete:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="delete-container">
+    <h3 class="delete-title">
+      <i class="fas fa-exclamation-triangle"></i> 
+      Xác nhận xóa gói tập
+    </h3>
+
+    <p>Bạn có chắc chắn muốn xóa gói tập sau đây?</p>
+    
+    <div class="package-info">
+      <p><strong>Khách hàng:</strong> {{ package.customer.full_name }}</p>
+      <p><strong>Loại lớp:</strong> {{ package.class_type.name }}</p>
+      <p><strong>Số buổi:</strong> {{ package.total_sessions }} (còn {{ package.remaining_sessions }})</p>
+      <p><strong>Ngày bắt đầu:</strong> {{ package.start_date|date:"d/m/Y" }}</p>
+      <p><strong>Ngày kết thúc:</strong> {% if package.end_date %}{{ package.end_date|date:"d/m/Y" }}{% else %}Không giới hạn{% endif %}</p>
+      <p><strong>Trạng thái:</strong> {{ package.get_status_display }}</p>
+    </div>
+
+    <div class="alert alert-warning">
+      <i class="fas fa-info-circle"></i> Lưu ý: Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan đến gói tập này sẽ bị xóa vĩnh viễn.
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-actions">
+        <button type="submit" class="btn btn-delete">
+          <i class="fas fa-trash-alt"></i> Xác nhận xóa
+        </button>
+        <a href="{% url 'dashboard:package_list' %}" class="btn btn-secondary">
+          <i class="fas fa-times"></i> Hủy
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %} 

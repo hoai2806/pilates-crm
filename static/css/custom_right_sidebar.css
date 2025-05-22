@@ -1,0 +1,59 @@
+#custom-admin-rightbar {
+    position: fixed;
+    right: 0;
+    top: 60px; /* Giả sử chiều cao header là 60px, điều chỉnh nếu cần */
+    width: 230px; /* Chiều rộng của rightbar */
+    height: calc(100vh - 60px); /* Chiều cao đầy đủ dưới header */
+    background-color: #ffffff; /* Màu nền, có thể điều chỉnh cho hợp theme */
+    border-left: 1px solid #e6e6e6; /* Đường viền trái */
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto; /* Cho phép cuộn nếu nội dung dài */
+    z-index: 1050; /* Đảm bảo nó ở trên hầu hết nội dung nhưng dưới modal của ElementUI (thường có z-index cao hơn) */
+    font-size: 14px;
+    color: #333333;
+}
+
+#custom-admin-rightbar h4 {
+    font-size: 16px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #2c3e50; /* Màu tiêu đề */
+}
+
+#custom-admin-rightbar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#custom-admin-rightbar ul li {
+    margin-bottom: 10px;
+}
+
+#custom-admin-rightbar ul li a {
+    text-decoration: none;
+    color: #3498db; /* Màu link chính */
+    display: block;
+    padding: 5px 0;
+    transition: color 0.2s ease-in-out;
+}
+
+#custom-admin-rightbar ul li a:hover {
+    color: #2980b9; /* Màu link khi hover */
+    text-decoration: none;
+}
+
+/* Điều chỉnh layout của SimpleUI để có không gian cho rightbar */
+/* Áp dụng cho container chính của SimpleUI khi không phải là popup hoặc trang login */
+body:not(.popup):not(.login-page) #main-content {
+    margin-right: 230px !important; /* Tạo không gian cho rightbar, #main-content là ID của el-main trong SimpleUI */
+    /* transition: margin-right 0.2s ease-out; */ /* Tùy chọn: Hiệu ứng nếu rightbar có thể ẩn/hiện */
+}
+
+/* Xóa các selector cũ hơn để tránh nhầm lẫn */
+/* body:not(.is_popup):not(.login-page) #app > .el-container > .el-container {
+}
+body:not(.is_popup):not(.login-page) #app > .el-container > .el-container > .el-main {
+} */ 

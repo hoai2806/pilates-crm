@@ -1,0 +1,54 @@
+/* CSS cho các nút hành động */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.view-btn {
+    background-color: #44B78B;
+}
+
+.view-btn:hover {
+    background-color: #3aa27c;
+}
+
+.edit-btn {
+    background-color: #5bc0de;
+}
+
+.edit-btn:hover {
+    background-color: #4cafd0;
+}
+
+.delete-btn {
+    background-color: #d9534f;
+}
+
+.delete-btn:hover {
+    background-color: #c9302c;
+}
+
+/* Thêm hiệu ứng sóng khi click */
+.action-btn:active {
+    transform: scale(0.95);
+} 

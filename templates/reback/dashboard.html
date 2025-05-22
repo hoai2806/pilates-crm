@@ -1,0 +1,170 @@
+{% extends 'reback/layout.html' %}
+{% load i18n %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block page_heading %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-xl-3 col-lg-6">
+        <div class="stats-card d-flex align-items-center">
+            <div class="me-3">
+                <div class="stats-card-icon bg-primary-light">
+                    <i class="ri-user-line"></i>
+                </div>
+            </div>
+            <div>
+                <h6 class="stats-card-title">Người dùng mới</h6>
+                <h4 class="stats-card-value">{{ new_customers }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-lg-6">
+        <div class="stats-card d-flex align-items-center">
+            <div class="me-3">
+                <div class="stats-card-icon bg-success-light">
+                    <i class="ri-money-dollar-circle-line"></i>
+                </div>
+            </div>
+            <div>
+                <h6 class="stats-card-title">Doanh thu</h6>
+                <h4 class="stats-card-value">{{ total_revenue|floatformat:0 }} đ</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-lg-6">
+        <div class="stats-card d-flex align-items-center">
+            <div class="me-3">
+                <div class="stats-card-icon bg-warning-light">
+                    <i class="ri-shopping-cart-line"></i>
+                </div>
+            </div>
+            <div>
+                <h6 class="stats-card-title">Đơn hàng</h6>
+                <h4 class="stats-card-value">{{ total_orders }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-lg-6">
+        <div class="stats-card d-flex align-items-center">
+            <div class="me-3">
+                <div class="stats-card-icon bg-danger-light">
+                    <i class="ri-heart-pulse-line"></i>
+                </div>
+            </div>
+            <div>
+                <h6 class="stats-card-title">Lượt tham gia</h6>
+                <h4 class="stats-card-value">{{ total_visits }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Tổng quan doanh thu</h5>
+                <div>
+                    <select class="form-select form-select-sm">
+                        <option selected>30 ngày gần đây</option>
+                        <option>Tháng này</option>
+                        <option>Quý này</option>
+                        <option>Năm nay</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-center py-5 my-5">Biểu đồ doanh thu sẽ hiển thị ở đây</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Các lớp học sắp tới</h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming_classes %}
+                    {% for class in upcoming_classes %}
+                        <div class="upcoming-class-item">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar-circle bg-primary">
+                                        {{ class.start_time|date:"H:i" }}
+                                    </div>
+                                </div>
+                                <div class="ms-3">
+                                    <h6 class="mb-1">{{ class.class_type.name }} với {{ class.instructor.full_name }}</h6>
+                                    <p class="text-muted mb-0">{{ class.specific_date|date:"d/m/Y" }} | Phòng: {{ class.room }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center">Không có lớp học nào sắp tới</p>
+                {% endif %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'reback:schedules' %}" class="btn btn-sm btn-primary">Xem tất cả</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Khách hàng mới đăng ký</h5>
+            </div>
+            <div class="card-body">
+                {% if new_registrations %}
+                    <div class="timeline">
+                        {% for customer in new_registrations %}
+                            <div class="timeline-item pb-3">
+                                <h6 class="mb-1">{{ customer.full_name }}</h6>
+                                <p class="text-muted mb-0">Đăng ký: {{ customer.registration_date|date:"d/m/Y" }}</p>
+                                <p class="text-muted mb-0">SĐT: {{ customer.phone }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center">Không có khách hàng mới</p>
+                {% endif %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'reback:customers' %}" class="btn btn-sm btn-primary">Xem tất cả</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Thanh toán gần đây</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_payments %}
+                    <div class="timeline">
+                        {% for payment in recent_payments %}
+                            <div class="timeline-item pb-3">
+                                <h6 class="mb-1">{{ payment.customer.full_name }}</h6>
+                                <p class="text-muted mb-0">
+                                    {% if payment.class_type %}
+                                        {{ payment.class_type.name }}
+                                    {% else %}
+                                        Thanh toán
+                                    {% endif %}
+                                    - {{ payment.final_amount|floatformat:0 }} đ
+                                </p>
+                                <p class="text-muted mb-0">{{ payment.payment_date|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center">Không có thanh toán gần đây</p>
+                {% endif %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'reback:payments' %}" class="btn btn-sm btn-primary">Xem tất cả</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %} 

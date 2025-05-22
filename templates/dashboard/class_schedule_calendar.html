@@ -1,0 +1,598 @@
+{% extends "dashboard/dashboard_base.html" %}
+
+{% load static %}
+
+{% block title %}Lịch học - HD Pilates Studio{% endblock %}
+
+{% block extra_css %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+{% endblock %}
+
+{% block additional_style %}
+<style>
+  .stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .stats-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .stats-card h3 {
+    margin-top: 0;
+    color: #417690;
+    font-size: 18px;
+    margin-bottom: 15px;
+  }
+  
+  .stats-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .stats-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .stats-list li:last-child {
+    border-bottom: none;
+  }
+  
+  .calendar-container {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    min-height: 600px;
+  }
+  
+  #calendar {
+    height: 700px;
+  }
+  
+  .event-tooltip {
+    position: absolute;
+    z-index: 10000;
+    background: white;
+    border-radius: 4px;
+    padding: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 300px;
+    display: none;
+  }
+  
+  .event-tooltip .title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #417690;
+  }
+  
+  .event-tooltip .info {
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  
+  .event-tooltip .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  
+  .event-tooltip .btn {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    color: white;
+  }
+  
+  .btn-view { background: #417690; }
+  .btn-edit { background: #79aec8; }
+  .btn-delete { background: #ba2121; }
+  
+  .loading-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    display: none;
+  }
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #417690;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <h1 class="page-title">Lịch học</h1>
+  <div>
+    <a href="{% url 'dashboard:class_schedule_form' %}" class="btn" style="background-color: #417690; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center;">
+      <i class="fas fa-plus" style="margin-right: 5px;"></i> Thêm lịch học
+    </a>
+    <a href="{% url 'dashboard:class_schedule_table' %}" class="btn" style="background-color: #79aec8; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; margin-left: 10px; display: inline-flex; align-items: center;">
+      <i class="fas fa-table" style="margin-right: 5px;"></i> Xem dạng bảng
+    </a>
+  </div>
+</div>
+
+<div style="margin-bottom: 20px; background: #fff; padding: 10px 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+  <p class="stats-range" style="font-size: 14px; color: #555; margin:0;">
+    <strong>Phạm vi thống kê hiện tại:</strong> 
+    {% if filter_start_date and filter_end_date %}
+      {{ filter_start_date|date:"d/m/Y" }} - {{ filter_end_date|date:"d/m/Y" }}
+    {% else %}
+      Tháng hiện tại (Mặc định)
+    {% endif %}
+  </p>
+</div>
+
+<div class="stats-container">
+  <div class="stats-card">
+    <h3>Thống kê lớp học</h3>
+    <div class="class-stats">
+      <ul class="stats-list">
+        {% for cls in class_stats %}
+          <li>
+            <span>{{ cls.class_type__name }}</span>
+            <strong>{{ cls.count }} ca</strong>
+          </li>
+        {% empty %}
+          <li>Không có dữ liệu cho khoảng thời gian này.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  
+  <div class="stats-card">
+    <h3>Thống kê HLV</h3>
+    <div class="instructor-stats">
+      <ul class="stats-list">
+        {% for ins in instructor_stats %}
+          <li>
+            <span>{{ ins.instructor__full_name }}</span>
+            <strong>{{ ins.count }} ca</strong>
+          </li>
+        {% empty %}
+          <li>Không có dữ liệu cho khoảng thời gian này.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  
+  <div class="stats-card">
+    <h3>Khung giờ nhiều ca nhất</h3>
+    <div class="time-stats">
+      <ul class="stats-list">
+        {% for t in time_stats %}
+          <li>
+            <span>{{ t.start_time|time:"H:i" }} - {{ t.end_time|time:"H:i" }}</span>
+            <strong>{{ t.count }} ca</strong>
+          </li>
+        {% empty %}
+          <li>Không có dữ liệu cho khoảng thời gian này.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+  <a href="{% url 'dashboard:class_schedule_form' %}" class="btn" style="background-color: #417690; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center;">
+    <i class="fas fa-plus" style="margin-right: 5px;"></i> Thêm lịch học
+  </a>
+  <a href="{% url 'dashboard:class_schedule_table' %}" class="btn" style="background-color: #79aec8; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; margin-left: 10px; display: inline-flex; align-items: center;">
+    <i class="fas fa-table" style="margin-right: 5px;"></i> Xem dạng bảng
+  </a>
+</div>
+
+<div class="calendar-container">
+  <div id="calendar"></div>
+</div>
+
+<div class="loading-container">
+  <div class="loading-spinner"></div>
+</div>
+
+<div id="eventTooltip" class="event-tooltip"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const currentUrlParamsOnLoad = new URLSearchParams(window.location.search);
+    const requestedViewTypeFromUrl = currentUrlParamsOnLoad.get('view_type');
+    // Biến này sẽ được sử dụng cho cả initialView và bên trong hàm events nếu cần
+    const activeCalendarView = requestedViewTypeFromUrl || 'timeGridWeek'; 
+
+    console.log("DOM loaded. Active calendar view (from URL or default):", activeCalendarView);
+    
+    var calendarEl = document.getElementById('calendar');
+    console.log("Calendar element:", calendarEl);
+    
+    if (!calendarEl) {
+      console.error("Calendar element not found!");
+      return;
+    }
+
+    var tooltipEl = document.getElementById('eventTooltip');
+    var loadingEl = document.querySelector('.loading-container');
+    var currentTooltipEvent = null;
+    let isInitialEventsFetch = true; // Cờ để xác định lần fetch đầu tiên
+    
+    function showLoading() {
+      loadingEl.style.display = 'block';
+    }
+    
+    function hideLoading() {
+      loadingEl.style.display = 'none';
+    }
+    
+    function hideTooltip() {
+      tooltipEl.style.display = 'none';
+      currentTooltipEvent = null;
+    }
+    
+    function showTooltip(event, element) {
+      const rect = element.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const props = event.extendedProps;
+      let detailsHtml = '';
+      let editUrl = '#';
+      let deleteAction = '';
+
+      if (props.type === 'class' || props.type === 'recurring_class') {
+          detailsHtml = `
+              <div><strong>Lớp:</strong> ${props.class_name || 'N/A'}</div>
+              <div><strong>HLV:</strong> ${props.instructor_name || 'N/A'}</div>
+              <div><strong>Phòng:</strong> ${props.room || 'N/A'}</div>
+              <div><strong>Trạng thái:</strong> ${props.status || 'N/A'}</div>
+          `;
+          // URL xem/sửa cho lịch học
+          editUrl = `/hdcrm/lich-hoc/them-moi/?schedule_id=${props.schedule_id}`;
+          deleteAction = `deleteEvent('event_class_${props.schedule_id}', 'class')`;
+           if (props.type === 'recurring_class' && props.recurring_date) {
+              // For recurring, the ID in FullCalendar might be different if it includes date
+              // The delete function needs the specific event.id from FullCalendar
+              deleteAction = `deleteEvent('${event.id}', 'recurring_class')`; 
+              // Edit URL might still point to the main recurring schedule for simplicity
+          }
+
+      } else if (props.type === 'appointment') {
+          detailsHtml = `
+              <div><strong>Khách hàng:</strong> ${props.customer_name || 'N/A'}</div>
+              <div><strong>HLV:</strong> ${props.instructor_names || 'N/A'}</div>
+              <div><strong>Ghi chú:</strong> ${props.notes || ''}</div>
+          `;
+          // URL xem/sửa cho cuộc hẹn
+          editUrl = `/hdcrm/lich-hoc/them-moi/?appointment_id=${props.appointment_id}`;
+          deleteAction = `deleteEvent('event_appointment_${props.appointment_id}', 'appointment')`;
+      }
+
+      tooltipEl.innerHTML = `
+          <div class="title">${event.title}</div>
+          <div class="info">
+              <div><strong>Thời gian:</strong> ${new Date(event.start).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(event.end).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</div>
+              ${detailsHtml}
+          </div>
+          <div class="actions">
+              <a href="${editUrl}" class="btn btn-view" title="Xem/Sửa chi tiết" target="_blank">
+                  <i class="fas fa-edit"></i>
+              </a>
+              <button onclick="${deleteAction}" class="btn btn-delete" title="Xóa">
+                  <i class="fas fa-trash"></i>
+              </button>
+          </div>
+      `;
+
+      tooltipEl.style.display = 'block';
+      tooltipEl.style.left = rect.left + window.pageXOffset + 'px';
+      tooltipEl.style.top = rect.top + scrollTop + element.offsetHeight + 5 + 'px';
+
+      currentTooltipEvent = event;
+    }
+    
+    window.deleteEvent = async function(eventId, eventType) {
+      let confirmMessage = 'Bạn có chắc chắn muốn xóa mục này?';
+      let apiUrl = '';
+
+      if (eventType === 'class' || eventType === 'recurring_class') {
+          confirmMessage = 'Bạn có chắc chắn muốn xóa ca học này?';
+          // For recurring class, eventId from FullCalendar is what we need to remove locally.
+          // For deletion, the backend might need the original schedule_id if it deletes the whole series or a specific occurrence rule.
+          // Current backend for class delete uses schedule_id.
+          const scheduleId = eventId.startsWith('event_recurring_') ? eventId.split('_')[2] : eventId.replace('event_class_','');
+          apiUrl = `/hdcrm/api/class-schedule/${scheduleId}/delete/`;
+      } else if (eventType === 'appointment') {
+          confirmMessage = 'Bạn có chắc chắn muốn xóa cuộc hẹn này?';
+          const appointmentId = eventId.replace('event_appointment_','');
+          apiUrl = `/hdcrm/api/appointment/${appointmentId}/delete/`;
+      }
+
+      if (!apiUrl) {
+          alert('Loại sự kiện không xác định để xóa.');
+          return;
+      }
+
+      if (confirm(confirmMessage)) {
+          try {
+              const response = await fetch(apiUrl, {
+                  method: 'DELETE',
+                  headers: {
+                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                  }
+              });
+
+              if (response.ok) {
+                  // Remove the event from the calendar by its FullCalendar ID
+                  const calendarEvent = calendar.getEventById(eventId);
+                  if(calendarEvent) calendarEvent.remove();
+                  
+                  hideTooltip();
+                  alert('Đã xóa thành công!');
+              } else {
+                  const errorData = await response.json().catch(() => ({}));
+                  alert('Có lỗi xảy ra khi xóa: ' + (errorData.error || response.statusText));
+              }
+          } catch (error) {
+              console.error('Error:', error);
+              alert('Có lỗi kết nối khi xóa!');
+          }
+      }
+    }
+    
+    document.addEventListener('click', function(e) {
+      if (!tooltipEl.contains(e.target) && 
+          !e.target.classList.contains('fc-event') &&
+          !e.target.closest('.fc-event')) {
+        hideTooltip();
+      }
+    });
+    
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      themeSystem: 'standard',
+      initialView: activeCalendarView,
+      firstDay: 1,
+      locale: 'vi',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      views: {
+        dayGridMonth: {
+          titleFormat: { year: 'numeric', month: 'long' }
+        },
+        timeGridWeek: {
+          titleFormat: { year: 'numeric', month: 'long', day: '2-digit' }
+        },
+        timeGridDay: {
+          titleFormat: { year: 'numeric', month: 'long', day: '2-digit' }
+        }
+      },
+      slotMinTime: '06:00:00',
+      slotMaxTime: '22:00:00',
+      expandRows: true,
+      height: 650,
+      contentHeight: 600,
+      aspectRatio: 1.5,
+      handleWindowResize: true,
+      nowIndicator: true,
+      navLinks: true,
+      weekNumbers: true,
+      editable: false,
+      selectable: false,
+      dayMaxEvents: true,
+      allDaySlot: false,
+      slotEventOverlap: false,
+      loading: function(isLoading) {
+        if (isLoading) {
+          showLoading();
+        } else {
+          hideLoading();
+        }
+      },
+      datesSet: function(dateInfo) {
+        console.log('Calendar datesSet. View:', dateInfo.view.type, 'Start:', dateInfo.startStr, 'End:', dateInfo.endStr);
+        
+        let startDate = dateInfo.start.toISOString().split('T')[0];
+        let endDate = new Date(dateInfo.end.valueOf() - (24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+        // Quan trọng: Sử dụng dateInfo.view.type cho datesSet vì lúc này view đã được thiết lập.
+        let currentSelectedViewType = dateInfo.view.type; 
+        
+        // Cập nhật URL bằng History API thay vì tải lại trang
+        const newUrl = `/hdcrm/lich-hoc/?start_date=${startDate}&end_date=${endDate}&view_type=${currentSelectedViewType}`;
+        
+        const currentUrlParams = new URLSearchParams(window.location.search);
+        const currentUrlStartDate = currentUrlParams.get('start_date');
+        const currentUrlEndDate = currentUrlParams.get('end_date');
+        const currentUrlViewType = currentUrlParams.get('view_type');
+
+        if (currentUrlStartDate !== startDate || currentUrlEndDate !== endDate || currentUrlViewType !== currentSelectedViewType) {
+          // Thay thế window.location.href bằng history.pushState để không tải lại trang
+          history.pushState({}, '', newUrl);
+          
+          // Gọi API để lấy dữ liệu sự kiện mới
+          calendar.refetchEvents();
+          
+          // Cập nhật phần thống kê theo khoảng thời gian mới
+          updateStatsDisplay(startDate, endDate);
+          
+          console.log("URL updated without page reload:", newUrl);
+        } else {
+          console.log("Date range and view type for stats already match calendar. No changes needed.");
+        }
+      },
+      events: function(fetchInfo, successCallback, failureCallback) {
+        let viewTypeForFetch;
+
+        if (isInitialEventsFetch) {
+          viewTypeForFetch = activeCalendarView; // Luôn dùng activeCalendarView cho lần đầu
+          console.log("Initial events fetch. Using activeCalendarView:", viewTypeForFetch);
+          isInitialEventsFetch = false; // Đặt lại cờ sau lần fetch đầu
+        } else if (this && this.view && this.view.type) {
+          viewTypeForFetch = this.view.type; // Đã sửa: this.view.type
+          console.log("Subsequent events fetch. Using this.view.type:", viewTypeForFetch);
+        } else {
+          // Fallback này ít khi xảy ra sau lần đầu, nhưng để an toàn
+          viewTypeForFetch = activeCalendarView; 
+          console.warn("this.view.type not available in subsequent events fetch, falling back to activeCalendarView:", viewTypeForFetch);
+        }
+        
+        const isoStart = fetchInfo.start.toISOString();
+        const isoEnd = fetchInfo.end.toISOString();
+
+        console.log("Fetching events for start:", isoStart, "end:", isoEnd, "view:", viewTypeForFetch);
+        
+        let params = new URLSearchParams();
+        params.append('start', isoStart);
+        params.append('end', isoEnd);
+        params.append('view_type', viewTypeForFetch);
+
+        fetch("/hdcrm/get-calendar-events/?" + params.toString(), {
+          method: 'GET'
+        })
+        .then(response => {
+          if (!response.ok) {
+            // Try to get text from response body before throwing error
+            return response.text().then(text => { 
+              let errorDetail = 'Server response not available.';
+              try {
+                const jsonError = JSON.parse(text);
+                if (jsonError && jsonError.details) {
+                  errorDetail = jsonError.details;
+                } else if (jsonError && jsonError.error) {
+                  errorDetail = jsonError.error;
+                } else {
+                  errorDetail = text; // Fallback to raw text if not our expected JSON
+                }
+              } catch (e) {
+                errorDetail = text; // If not JSON, show raw text
+              }
+              throw new Error('Network response was not ok: ' + response.status + ' ' + response.statusText + '. Details: ' + errorDetail);
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          successCallback(data);
+        })
+        .catch(error => {
+          console.error('Error loading events:', error);
+          failureCallback(error); // Notify FullCalendar about the failure
+          // Display a more detailed error message
+          let alertMessage = 'Có lỗi khi tải dữ liệu lịch học! Vui lòng thử lại.';
+          if (error && error.message) {
+            alertMessage += "\n" + error.message;
+          }
+          alert(alertMessage);
+        });
+      },
+      eventDidMount: function(info) {
+        info.el.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (currentTooltipEvent && currentTooltipEvent.id === info.event.id) {
+            hideTooltip();
+          } else {
+            showTooltip(info.event, info.el);
+          }
+        });
+      }
+    });
+    
+    console.log("Calendar initialized");
+    calendar.render();
+    console.log("Calendar rendered");
+
+    // Thêm resize handler
+    window.addEventListener('resize', function() {
+      calendar.updateSize();
+    });
+  });
+  // Hàm cập nhật hiển thị thống kê mà không tải lại trang
+  function updateStatsDisplay(startDate, endDate) {
+    // Cập nhật phạm vi thống kê hiển thị
+    const startDateFormatted = new Date(startDate).toLocaleDateString('vi-VN');
+    const endDateFormatted = new Date(endDate).toLocaleDateString('vi-VN');
+    
+    const statsRangeElement = document.querySelector('.stats-range');
+    if (statsRangeElement) {
+      statsRangeElement.innerHTML = `<strong>Phạm vi thống kê hiện tại:</strong> ${startDateFormatted} - ${endDateFormatted}`;
+    }
+    
+    // Tải dữ liệu thống kê mới từ server qua AJAX
+    fetch(`/hdcrm/lich-hoc/?start_date=${startDate}&end_date=${endDate}&format=json`)
+      .then(response => response.json())
+      .then(data => {
+        console.log("Stats data loaded:", data);
+        
+        // Cập nhật thông tin thống kê hiển thị
+        if (data.class_stats) {
+          const classStatsElement = document.querySelector('.class-stats');
+          if (classStatsElement) {
+            let html = '<ul class="stats-list">';
+            data.class_stats.forEach(stat => {
+              html += `<li><span>${stat.class_type__name || 'N/A'}</span> <strong>${stat.count}</strong></li>`;
+            });
+            html += '</ul>';
+            classStatsElement.innerHTML = html;
+          }
+        }
+        
+        if (data.instructor_stats) {
+          const instructorStatsElement = document.querySelector('.instructor-stats');
+          if (instructorStatsElement) {
+            let html = '<ul class="stats-list">';
+            data.instructor_stats.forEach(stat => {
+              html += `<li><span>${stat.instructor__full_name || 'N/A'}</span> <strong>${stat.count}</strong></li>`;
+            });
+            html += '</ul>';
+            instructorStatsElement.innerHTML = html;
+          }
+        }
+        
+        if (data.time_stats) {
+          const timeStatsElement = document.querySelector('.time-stats');
+          if (timeStatsElement) {
+            let html = '<ul class="stats-list">';
+            data.time_stats.forEach(stat => {
+              const startTime = stat.start_time ? stat.start_time.substring(0, 5) : 'N/A';
+              const endTime = stat.end_time ? stat.end_time.substring(0, 5) : 'N/A';
+              html += `<li><span>${startTime} - ${endTime}</span> <strong>${stat.count}</strong></li>`;
+            });
+            html += '</ul>';
+            timeStatsElement.innerHTML = html;
+          }
+        }
+      })
+      .catch(error => {
+        console.error("Error loading stats data:", error);
+      });
+  }
+</script>
+{% endblock %} 

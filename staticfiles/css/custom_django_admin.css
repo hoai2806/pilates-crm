@@ -1,0 +1,390 @@
+/* static/css/custom_django_admin.css */
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;700&display=swap');
+
+:root {
+    --admin-font-family: "Be Vietnam Pro", "Roboto", "Open Sans", "Helvetica Neue", sans-serif;
+    --brand-purple: #6f42c1;
+    --brand-pink: #E91E63; /* Vibrant Pink */
+    --brand-pink-light: #f8bbd0; /* Light Pink for backgrounds/borders */
+    --text-color: #343a40; /* Darker gray for better readability */
+    --link-color: var(--brand-pink);
+    --link-hover-color: var(--brand-purple);
+    --header-bg: var(--brand-purple);
+    --header-text-color: #ffffff;
+    --button-primary-bg: var(--brand-purple);
+    --button-primary-text: #ffffff;
+    --button-secondary-bg: var(--brand-pink);
+    --button-secondary-text: #ffffff;
+    --content-width: 70%;
+    --sidebar-width: 28%;
+    --sidebar-bg: #f8f9fa; /* Light gray for sidebar */
+    --container-bg: #e9ecef; /* Light background for the page container */
+    --content-bg: #ffffff; /* White for main content area */
+}
+
+body.custom-django-admin {
+    font-family: var(--admin-font-family);
+    color: var(--text-color);
+    margin: 0;
+    background-color: var(--container-bg); 
+}
+
+/* Header */
+#header {
+    background-color: var(--header-bg);
+    color: var(--header-text-color);
+    padding: 12px 20px; /* Slightly reduced padding */
+    display: flex; /* Use flexbox for better alignment */
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid var(--brand-pink);
+}
+
+#header a:link,
+#header a:visited {
+    color: var(--header-text-color);
+    text-decoration: none;
+}
+
+#branding h1, #branding #site-name {
+    margin: 0;
+    font-size: 1.6em; /* Slightly reduced size */
+    font-weight: 700;
+}
+
+#user-tools {
+    font-size: 0.85em; /* Slightly reduced size */
+    font-weight: 500;
+}
+#user-tools button {
+    background: var(--brand-pink);
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+#user-tools button:hover {
+    background: #c2185b; /* Darker pink */
+}
+
+
+/* Main layout container */
+#custom-admin-container {
+    display: flex;
+    flex-wrap: wrap; 
+    padding: 20px;
+    gap: 2%; 
+}
+
+#custom-main-content-area {
+    flex: 1 1 var(--content-width); /* Allow growing and shrinking */
+    min-width: 300px; /* Prevent excessive shrinking */
+    background-color: var(--content-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+#custom-right-sidebar {
+    flex: 1 1 var(--sidebar-width);
+    min-width: 250px; /* Prevent excessive shrinking */
+    background-color: var(--sidebar-bg);
+    color: var(--text-color);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    height: fit-content; /* So it doesn't stretch unnecessarily */
+}
+
+#custom-right-sidebar h3 {
+    color: var(--brand-purple);
+    border-bottom: 2px solid var(--brand-pink-light);
+    padding-bottom: 10px;
+    margin-top: 0;
+    font-size: 1.2em;
+    font-weight: 700;
+}
+#custom-right-sidebar ul {
+    list-style: none;
+    padding-left: 0;
+}
+#custom-right-sidebar ul li a {
+    display: block;
+    padding: 8px 0;
+    color: var(--brand-pink);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--brand-pink-light);
+}
+#custom-right-sidebar ul li a:hover {
+    color: var(--brand-purple);
+    border-bottom-color: var(--brand-purple);
+}
+
+
+/* General content styling */
+#content h1 {
+    color: var(--brand-purple);
+    font-weight: 700;
+    font-size: 1.8em; /* Match header h1 */
+    margin-bottom: 20px;
+}
+.module caption, .module h2, .module th { /* Table headers in admin */
+    background: var(--brand-pink-light) !important; /* Important to override default */
+    color: var(--brand-purple) !important;
+    font-weight: 500;
+    padding: 10px;
+    text-align: left;
+}
+.module table {
+    border-collapse: collapse;
+    width: 100%;
+}
+.module td, .module th {
+    border-bottom: 1px solid #eee;
+}
+
+
+a {
+    color: var(--link-color);
+    text-decoration: none;
+}
+a:hover {
+    color: var(--link-hover-color);
+    /* text-decoration: underline; */ /* Optional, can be too much */
+}
+
+/* Buttons */
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text) !important; /* Ensure text is white */
+    padding: 10px 18px; /* More padding */
+    border: none;
+    border-radius: 5px; /* Softer radius */
+    cursor: pointer;
+    font-family: var(--admin-font-family);
+    font-size: 0.9em; /* Standardized size */
+    font-weight: 500;
+    text-decoration: none; /* For a.button */
+    display: inline-block; /* For a.button */
+    transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover, a.button:hover {
+    background: var(--link-hover-color); 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.button.default, input[type=submit].default {
+    background: var(--button-secondary-bg);
+}
+.button.default:hover, input[type=submit].default:hover {
+    background: #c2185b; /* Darker pink */
+}
+
+/* Object tools */
+.object-tools {
+    margin-bottom: 10px;
+}
+.object-tools a {
+    margin-right: 5px;
+}
+
+
+/* Messages */
+.messagelist {
+    padding-left: 0;
+    margin-bottom: 15px;
+}
+.messagelist li {
+    list-style: none;
+    padding: 12px 15px 12px 50px; /* Space for icon */
+    margin-bottom: 8px;
+    border-radius: 4px;
+    position: relative;
+    font-weight: 500;
+}
+.messagelist li:before { /* Pseudo-element for icons */
+    font-family: "Font Awesome 5 Free"; /* Assuming Font Awesome is available via Django or another import*/
+    font-weight: 900;
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2em;
+}
+
+.messagelist .info {
+    background-color: #e0e7ff; /* Lighter purple */
+    color: #435EBE;
+    border-left: 5px solid var(--brand-purple);
+}
+.messagelist .info:before { content: "\f05a"; color: var(--brand-purple); } /* fa-info-circle */
+
+.messagelist .success {
+    background-color: #d1fecb; /* Lighter pink/green */
+    color: #2E7D32;
+    border-left: 5px solid var(--brand-pink);
+}
+.messagelist .success:before { content: "\f058"; color: var(--brand-pink); } /* fa-check-circle */
+
+.messagelist .warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 5px solid #ffc107;
+}
+.messagelist .warning:before { content: "\f071"; color: #ffc107; } /* fa-exclamation-triangle */
+
+.messagelist .error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 5px solid #dc3545;
+}
+.messagelist .error:before { content: "\f06a"; color: #dc3545; } /* fa-exclamation-circle */
+
+
+/* Breadcrumbs */
+.breadcrumbs {
+    background: var(--content-bg); /* Match content area */
+    padding: 12px 20px;
+    border-bottom: 1px solid #dee2e6;
+    margin: -20px -20px 20px -20px; /* Extend to edges of content area, adjust if padding changes */
+    border-radius: 8px 8px 0 0; /* Top corners rounded */
+}
+.breadcrumbs a {
+    color: var(--brand-purple);
+    font-weight: 500;
+}
+.breadcrumbs > a:first-child {
+    font-weight: 700; /* Home bolder */
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) { /* Adjust breakpoint for sidebar earlier */
+    :root {
+        --content-width: 65%; 
+        --sidebar-width: 33%;
+    }
+}
+
+@media (max-width: 768px) {
+    #custom-admin-container {
+        flex-direction: column;
+    }
+    #custom-main-content-area, #custom-right-sidebar {
+        flex-basis: 100%;
+        margin-bottom: 20px; /* Space when stacked */
+    }
+    #custom-right-sidebar {
+        height: auto; /* Allow it to grow */
+    }
+    #content h1 {
+        font-size: 1.5em;
+    }
+    .button, input[type=submit], input[type=button], .submit-row input, a.button {
+        padding: 8px 12px;
+        font-size: 0.85em;
+    }
+}
+
+/* Django admin specific overrides - Add as needed */
+.aligned label { /* Ensure labels align well */
+    width: 15em !important; /* Adjust as needed, Django default can be wide */
+}
+
+/* Styles for Admin Index Page (Dashboard View) */
+.dashboard-intro {
+    font-size: 1.1em;
+    color: var(--text-color);
+    margin-bottom: 25px;
+}
+
+.app-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid */
+    gap: 20px;
+}
+
+.app-module-card {
+    background-color: var(--content-bg); /* White background for cards */
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    overflow: hidden; /* To contain rounded corners with table */
+    display: flex;
+    flex-direction: column;
+}
+
+.app-module-title {
+    background-color: var(--brand-pink-light);
+    color: var(--brand-purple);
+    padding: 12px 15px;
+    margin: 0;
+    font-size: 1.25em;
+    font-weight: 700;
+    border-bottom: 1px solid #d1c4e9; /* Lighter purple border */
+}
+
+.app-module-title a {
+    color: inherit; /* Inherit color from parent h2 */
+    text-decoration: none;
+    display: block;
+}
+.app-module-title a:hover {
+    text-decoration: underline;
+}
+
+.model-list {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0; /* Remove default table margin if any */
+}
+
+.model-list th,
+.model-list td {
+    padding: 10px 15px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0; /* Lighter border for rows */
+    font-size: 0.95em;
+}
+
+.model-list tr:last-child th,
+.model-list tr:last-child td {
+    border-bottom: none;
+}
+
+.model-list th a {
+    font-weight: 500;
+    color: var(--brand-purple); /* Purple for model names */
+}
+.model-list th a:hover {
+    color: var(--brand-pink);
+}
+
+.model-actions a {
+    margin-left: 10px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.model-actions .addlink {
+    color: var(--brand-pink); 
+}
+.model-actions .changelink {
+    color: var(--brand-purple); 
+}
+
+.app-module-card > p { /* For 'No models available' text */
+    padding: 15px;
+    margin: 0;
+    color: #666;
+}
+
+/* Ensure Font Awesome is loaded for message icons (if not already by Django admin) */
+/* You might need to add a link to Font Awesome in base_site.html if not available */
+/* e.g., <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"> */
+/* This was added to base_site.html in a previous step for calendar icons. Re-checking... */
+/* The Font Awesome link in the Python code for base_site.html was for calendar_app, not this new context. */
+/* It's better to add it directly to the `base_site.html` override we are creating now. */ 

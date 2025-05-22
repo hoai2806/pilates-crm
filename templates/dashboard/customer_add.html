@@ -1,0 +1,506 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Thêm mới khách hàng{% endblock %}
+
+{% block extrahead %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.css">
+<style>
+    .health-docs-container {
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .nav-tabs .nav-link {
+        color: #495057;
+    }
+    .nav-tabs .nav-link.active {
+        font-weight: bold;
+        color: #007bff;
+    }
+    .preview-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    .preview-item {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .preview-item .preview-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0,0,0,0.5);
+        color: white;
+        padding: 5px;
+        font-size: 12px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .preview-item .remove-file, 
+    .preview-item .edit-description {
+        cursor: pointer;
+        color: white;
+        margin-left: 5px;
+    }
+    .file-type-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        color: #6c757d;
+        height: 100%;
+        background: #f8f9fa;
+    }
+    .hidden-upload {
+        display: none;
+    }
+    .upload-btn {
+        margin-bottom: 10px;
+    }
+    .custom-file-upload {
+        display: inline-block;
+        padding: 6px 12px;
+        cursor: pointer;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .preview-item video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .preview-item .pdf-preview {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+    }
+    .preview-item .pdf-preview i {
+        font-size: 48px;
+        color: #dc3545;
+    }
+    .preview-remove {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+        color: #dc3545;
+    }
+    .doc-description {
+        width: 100%;
+        margin-top: 5px;
+        font-size: 12px;
+        color: #6c757d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .avatar-preview {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin: 0 auto 20px;
+        border: 1px solid #ddd;
+    }
+    .avatar-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Thêm mới khách hàng</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Thông tin khách hàng</h6>
+        </div>
+        <div class="card-body">
+            <form id="customerForm" action="{% url 'dashboard:customer_add' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="full_name">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Số điện thoại <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="phone" name="phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="birthday">Ngày sinh</label>
+                            <input type="date" class="form-control" id="birthday" name="birthday">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="address">Địa chỉ</label>
+                            <input type="text" class="form-control" id="address" name="address">
+                        </div>
+                        <div class="form-group">
+                            <label for="facebook">Facebook</label>
+                            <input type="text" class="form-control" id="facebook" name="facebook">
+                        </div>
+                        <div class="form-group">
+                            <label for="branch">Chi nhánh</label>
+                            <select class="form-control" id="branch" name="branch">
+                                {% for branch in branches %}
+                                <option value="{{ branch.id }}">{{ branch.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Trạng thái</label>
+                            <select class="form-control" id="status" name="status">
+                                <option value="Liên hệ">Liên hệ</option>
+                                <option value="Tập thử">Tập thử</option>
+                                <option value="Mua hàng">Mua hàng</option>
+                                <option value="Tái mua">Tái mua</option>
+                                <option value="Không đến tập thử">Không đến tập thử</option>
+                                <option value="Không mua hàng">Không mua hàng</option>
+                                <option value="Không tái mua">Không tái mua</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label for="health_notes">Ghi chú về sức khỏe</label>
+                            <textarea class="form-control" id="health_notes" name="health_notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Avatar upload -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="profile_image">Ảnh đại diện</label>
+                            <div class="avatar-preview">
+                                <img id="avatar-preview-img" src="{% static 'img/default-avatar.png' %}" alt="Ảnh đại diện">
+                            </div>
+                            <input type="file" class="form-control-file" id="profile_image" name="profile_image" accept="image/*" onchange="previewAvatar(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thông tin sức khỏe và tài liệu sức khỏe (được gộp lại) -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card card-primary">
+                            <div class="card-header">
+                                <h3 class="card-title">Thông tin sức khỏe</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="health_notes">Ghi chú về vấn đề sức khỏe</label>
+                                    <textarea class="form-control" id="health_notes" name="health_notes" rows="3" placeholder="Nhập các vấn đề sức khỏe cần lưu ý..."></textarea>
+                                </div>
+                                
+                                <div class="health-docs-container mt-3">
+                                    <h5>Tài liệu sức khỏe</h5>
+                                    <p class="text-muted">Tải lên hình ảnh, video, PDF liên quan đến sức khỏe của khách hàng</p>
+                                    
+                                    <div class="form-group">
+                                        <label>Chọn tài liệu sức khỏe</label>
+                                        <input type="file" id="health_docs" name="health_docs" multiple class="form-control-file" onchange="handleHealthDocsUpload(this)">
+                                        <small class="form-text text-muted">Hỗ trợ: JPG, PNG, PDF, MP4 (tối đa 10MB/file)</small>
+                                    </div>
+                                    
+                                    <div id="health-docs-preview" class="preview-container"></div>
+                                    
+                                    <!-- Lưu trữ thông tin mô tả cho mỗi tài liệu -->
+                                    <div id="health-docs-descriptions-container"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Ghi chú</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Lưu khách hàng</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thêm mô tả cho tài liệu sức khỏe -->
+<div class="modal fade" id="docDescriptionModal" tabindex="-1" role="dialog" aria-labelledby="docDescriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="docDescriptionModalLabel">Thêm mô tả cho tài liệu</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="doc-index" value="">
+                <div class="form-group">
+                    <label for="doc-description">Mô tả tình trạng sức khỏe trong tài liệu</label>
+                    <textarea class="form-control" id="doc-description" rows="3" placeholder="Mô tả chi tiết vấn đề sức khỏe thể hiện trong tài liệu..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="saveDocDescription()">Lưu mô tả</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrascripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
+<script>
+    // Mảng lưu thông tin các tài liệu sức khỏe
+    let healthDocs = [];
+    
+    // Hàm preview ảnh đại diện
+    function previewAvatar(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('avatar-preview-img').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    // Xử lý khi chọn tài liệu sức khỏe
+    function handleHealthDocsUpload(input) {
+        const files = input.files;
+        if (!files || files.length === 0) return;
+        
+        const previewContainer = document.getElementById('health-docs-preview');
+        const descriptionsContainer = document.getElementById('health-docs-descriptions-container');
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const fileIndex = healthDocs.length;
+            
+            // Kiểm tra loại file
+            let fileType = '';
+            if (file.type.startsWith('image/')) fileType = 'image';
+            else if (file.type === 'application/pdf') fileType = 'pdf';
+            else if (file.type.startsWith('video/')) fileType = 'video';
+            else fileType = 'other';
+            
+            // Lưu thông tin file
+            healthDocs.push({
+                file: file,
+                type: fileType,
+                description: '',
+                index: fileIndex
+            });
+            
+            // Tạo preview
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            previewItem.dataset.index = fileIndex;
+            
+            // Nút xóa
+            const removeButton = document.createElement('div');
+            removeButton.className = 'preview-remove';
+            removeButton.innerHTML = '<i class="fas fa-times"></i>';
+            removeButton.onclick = function() { removeHealthDoc(fileIndex); };
+            
+            // Tạo preview tùy theo loại file
+            if (fileType === 'image') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    previewItem.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            } else if (fileType === 'pdf') {
+                const pdfPreview = document.createElement('div');
+                pdfPreview.className = 'pdf-preview';
+                pdfPreview.innerHTML = '<i class="far fa-file-pdf"></i>';
+                previewItem.appendChild(pdfPreview);
+            } else if (fileType === 'video') {
+                const video = document.createElement('video');
+                video.controls = false;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    video.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+                previewItem.appendChild(video);
+            } else {
+                const otherPreview = document.createElement('div');
+                otherPreview.className = 'pdf-preview';
+                otherPreview.innerHTML = '<i class="far fa-file"></i>';
+                previewItem.appendChild(otherPreview);
+            }
+            
+            // Hiển thị tên file
+            const docName = document.createElement('div');
+            docName.className = 'doc-description';
+            docName.textContent = file.name;
+            
+            // Thêm nút thêm mô tả
+            const addDescBtn = document.createElement('button');
+            addDescBtn.className = 'btn btn-sm btn-outline-primary mt-1';
+            addDescBtn.textContent = 'Thêm mô tả';
+            addDescBtn.type = 'button';
+            addDescBtn.onclick = function() { openDescriptionModal(fileIndex); };
+            
+            // Tạo input ẩn để lưu thông tin file khi submit form
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = `health_doc_description_${fileIndex}`;
+            hiddenInput.id = `health_doc_description_${fileIndex}`;
+            hiddenInput.value = '';
+            descriptionsContainer.appendChild(hiddenInput);
+            
+            // Thêm các phần tử vào preview
+            previewItem.appendChild(removeButton);
+            previewItem.appendChild(docName);
+            previewItem.appendChild(addDescBtn);
+            previewContainer.appendChild(previewItem);
+        }
+        
+        // Reset input file để có thể chọn lại các file đã chọn
+        input.value = '';
+    }
+    
+    // Xóa tài liệu sức khỏe
+    function removeHealthDoc(index) {
+        const previewItem = document.querySelector(`.preview-item[data-index="${index}"]`);
+        if (previewItem) previewItem.remove();
+        
+        // Đánh dấu file đã bị xóa (ko xóa khỏi mảng để giữ nguyên index)
+        healthDocs[index] = null;
+        
+        // Xóa hidden input
+        const hiddenInput = document.getElementById(`health_doc_description_${index}`);
+        if (hiddenInput) hiddenInput.remove();
+    }
+    
+    // Mở modal thêm mô tả
+    function openDescriptionModal(index) {
+        document.getElementById('doc-index').value = index;
+        
+        // Nếu đã có mô tả, hiển thị lên modal
+        if (healthDocs[index] && healthDocs[index].description) {
+            document.getElementById('doc-description').value = healthDocs[index].description;
+        } else {
+            document.getElementById('doc-description').value = '';
+        }
+        
+        $('#docDescriptionModal').modal('show');
+    }
+    
+    // Lưu mô tả cho tài liệu
+    function saveDocDescription() {
+        const index = document.getElementById('doc-index').value;
+        const description = document.getElementById('doc-description').value;
+        
+        if (healthDocs[index]) {
+            healthDocs[index].description = description;
+            
+            // Cập nhật hidden input
+            const hiddenInput = document.getElementById(`health_doc_description_${index}`);
+            if (hiddenInput) hiddenInput.value = description;
+            
+            // Cập nhật giao diện
+            const docDescElement = document.querySelector(`.preview-item[data-index="${index}"] .doc-description`);
+            if (docDescElement) {
+                if (description) {
+                    docDescElement.textContent = description.substring(0, 20) + (description.length > 20 ? '...' : '');
+                } else {
+                    docDescElement.textContent = healthDocs[index].file.name;
+                }
+            }
+            
+            // Đóng modal
+            $('#docDescriptionModal').modal('hide');
+        }
+    }
+    
+    // Xử lý khi submit form
+    document.getElementById('customerForm').addEventListener('submit', function(e) {
+        // Xóa các file null khỏi mảng
+        const validDocs = healthDocs.filter(doc => doc !== null);
+        
+        // Đính kèm các file vào form data
+        if (validDocs.length > 0) {
+            for (let i = 0; i < validDocs.length; i++) {
+                const doc = validDocs[i];
+                
+                // Tạo FormData object và thêm file
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.name = `health_doc_${i}`;
+                fileInput.style.display = 'none';
+                
+                // Tạo một DataTransfer để gán file cho input
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(doc.file);
+                fileInput.files = dataTransfer.files;
+                
+                this.appendChild(fileInput);
+                
+                // Thêm các input ẩn vào form
+                const typeInput = document.createElement('input');
+                typeInput.type = 'hidden';
+                typeInput.name = `health_doc_type_${i}`;
+                typeInput.value = doc.type;
+                this.appendChild(typeInput);
+            }
+            
+            // Thêm số lượng tài liệu vào form
+            const countInput = document.createElement('input');
+            countInput.type = 'hidden';
+            countInput.name = 'health_docs_count';
+            countInput.value = validDocs.length;
+            this.appendChild(countInput);
+        }
+    });
+</script>
+{% endblock %}

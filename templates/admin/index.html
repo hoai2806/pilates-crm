@@ -1,0 +1,62 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  {# Có thể thêm CSS_specific cho trang index ở đây nếu cần #}
+{% endblock %}
+
+{% block coltype %}colMS{% endblock %}
+
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+
+{% block content_title %}
+  <h1>{% translate 'Site administration' %}</h1>
+  <p class="dashboard-intro">{% translate "Welcome to your admin dashboard. Select an application below to manage its content." %}</p>
+{% endblock %}
+
+{% block content %}
+<div id="content-main" class="dashboard-main">
+    {% if app_list %}
+        <div class="app-list-container">
+            {% for app in app_list %}
+                <div class="app-module-card module table-responsive">
+                    <h2 class="app-module-title">
+                        <a href="{{ app.app_url }}" class="section" title="{% blocktranslate with name=app.name %}Models in the {{ name }} application{% endblocktranslate %}">
+                            {{ app.name }}
+                        </a>
+                    </h2>
+                    {% if app.models %}
+                        <table class="model-list">
+                            <tbody>
+                                {% for model in app.models %}
+                                    <tr class="model-{{ model.object_name|lower }}">
+                                    {% if model.admin_url %}
+                                        <th scope="row"><a href="{{ model.admin_url }}">{{ model.name }}</a></th>
+                                    {% else %}
+                                        <th scope="row">{{ model.name }}</th>
+                                    {% endif %}
+
+                                    <td class="model-actions">
+                                        {% if model.add_url %}<a href="{{ model.add_url }}" class="addlink">{% translate 'Add' %}</a>{% endif %}
+                                        {% if model.admin_url %}<a href="{{ model.admin_url }}" class="changelink">{% translate 'Change' %}</a>{% endif %}
+                                    </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>{% translate 'No models available in this application.' %}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>{% translate "You don't have permission to view or edit anything." %}</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block sidebar %}
+    {# Phần này sẽ hiển thị sidebar bên phải từ base_site.html #}
+{% endblock %} 

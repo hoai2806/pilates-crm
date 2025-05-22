@@ -1,0 +1,200 @@
+{% extends 'dashboard/base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{% if title %}{{ title }} | {% endif %}HDCRM - Quản lý Phòng tập Pilates{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'admin/css/base.css' %}">
+<style>
+    #content {
+        padding: 20px;
+    }
+    .breadcrumbs {
+        margin-bottom: 15px;
+    }
+    
+    .submit-row {
+        padding: 12px 0;
+        margin: 15px 0;
+        text-align: right;
+    }
+    
+    .button, input[type=submit], input[type=button], .submit-row input {
+        background: var(--primary-color);
+        border: none;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .button:active, input[type=submit]:active, input[type=button]:active, .button:focus, input[type=submit]:focus, input[type=button]:focus, .button:hover, input[type=submit]:hover, input[type=button]:hover {
+        background: var(--secondary-color);
+    }
+    
+    .button.default, input[type=submit].default, .submit-row input.default {
+        background: var(--primary-color);
+        color: white;
+        font-weight: bold;
+    }
+    
+    fieldset {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+    }
+    
+    .aligned label {
+        width: 160px;
+        display: inline-block;
+    }
+    
+    form .aligned p.help {
+        margin-left: 160px;
+        padding-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div id="content" class="{% block coltype %}colM{% endblock %}">
+        {% block pretitle %}{% endblock %}
+        {% block content_title %}{% if title %}<h1>{{ title }}</h1>{% endif %}{% endblock %}
+        {% block content_subtitle %}{% if subtitle %}<h2>{{ subtitle }}</h2>{% endif %}{% endblock %}
+        {% block breadcrumbs %}
+            <div class="breadcrumbs">
+                <a href="{% url 'admin:index' %}">Trang chủ</a>
+                {% if title %} &rsaquo; {{ title }}{% endif %}
+                {% if subtitle %} &rsaquo; {{ subtitle }}{% endif %}
+            </div>
+        {% endblock %}
+        
+        {% block messages %}
+            {% if messages %}
+                <ul class="messagelist">
+                    {% for message in messages %}
+                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|capfirst }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endblock messages %}
+        
+        {% block object-tools %}{% endblock %}
+        
+        {% block content_main %}{% endblock %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/custom.css' %}" />
+    <style>
+        /* Custom CSS cho admin - màu sắc phù hợp với logo */
+        :root {
+            --primary-purple: #7a4ba9; /* Màu tím từ logo */
+            --primary-pink: #e58ab2; /* Màu hồng từ logo */
+            --light-purple: #f0e6f7; /* Màu tím nhạt */
+            --light-pink: #fdeef3; /* Màu hồng nhạt */
+            --dark-text: #333; /* Màu chữ tối */
+            --light-bg: #ffffff; /* Nền trắng sáng */
+            --hover-purple: #6a3a99; /* Màu tím đậm khi hover */
+        }
+
+        body {
+            background-color: var(--light-bg);
+        }
+
+        #header {
+            background: linear-gradient(to right, var(--primary-purple), var(--primary-pink));
+            color: white;
+        }
+
+        #branding h1, #branding h1 a:link, #branding h1 a:visited {
+            color: white;
+        }
+
+        .module h2, .module caption, .inline-group h2 {
+            background-color: var(--primary-purple);
+            color: white;
+        }
+
+        div.breadcrumbs {
+            background: var(--light-purple);
+            color: var(--dark-text);
+            border-bottom: 1px solid var(--primary-purple);
+        }
+
+        div.breadcrumbs a {
+            color: var(--primary-purple);
+        }
+
+        .object-tools a.addlink {
+            background-color: var(--primary-pink);
+        }
+
+        .object-tools a.addlink:hover {
+            background-color: #d37a9e; /* Màu hồng đậm hơn khi hover */
+        }
+
+        .object-tools a.changelink {
+            background-color: var(--primary-purple);
+        }
+
+        .object-tools a.changelink:hover {
+            background-color: var(--hover-purple);
+        }
+
+        .button.default, input[type=submit].default {
+            background-color: var(--primary-purple);
+        }
+
+        .button.default:hover, input[type=submit].default:hover {
+            background-color: var(--hover-purple);
+        }
+
+        a:link, a:visited {
+            color: var(--primary-purple);
+        }
+
+        a:hover {
+            color: var(--hover-purple);
+        }
+
+        #changelist-filter h2 {
+            background-color: var(--primary-purple);
+        }
+
+        #changelist-filter h3 {
+            background-color: var(--light-purple);
+            color: var(--dark-text);
+            padding: 5px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .selector-chosen h2 {
+            background: var(--primary-purple);
+        }
+
+        .dashboard .module table th {
+            background-color: var(--light-purple);
+        }
+
+        /* Màu nền trang Django admin */
+        #container {
+            background-color: var(--light-bg);
+        }
+    </style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{% trans 'Pilates CRM Dashboard' %}</a></h1>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

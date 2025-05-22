@@ -1,0 +1,4 @@
+Django==4.2.21
+django-jazzmin==3.0.1
+djangorestframework==3.16.0
+Pillow==11.2.1 

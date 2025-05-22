@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HDCRM - Quản lý phòng tập Pilates{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3e6dd3;
+            --secondary-color: #25b0eb;
+            --text-color: #333;
+            --bg-color: #f8f9fa;
+            --sidebar-width: 250px;
+            --header-height: 60px;
+            --sidebar-bg: #fff;
+            --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            --footer-height: 50px;
+        }
+        
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        .header {
+            height: var(--header-height);
+            background-color: var(--primary-color);
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+        }
+        
+        .header-brand {
+            font-size: 1.25rem;
+            font-weight: 600;
+            flex-grow: 1;
+        }
+        
+        .header-nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-nav-item {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            padding: 0 15px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .header-nav-item:hover {
+            color: white;
+        }
+        
+        .header-nav-item i {
+            margin-right: 5px;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            overflow-y: auto;
+            box-shadow: 1px 0 5px rgba(0,0,0,0.05);
+            z-index: 900;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-section-title {
+            padding: 15px 15px 5px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #6c757d;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .sidebar-menu li a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-menu li a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+            font-size: 1rem;
+        }
+        
+        .sidebar-menu li a:hover {
+            background-color: rgba(62, 109, 211, 0.05);
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+        }
+        
+        .sidebar-menu li a.active {
+            background-color: rgba(62, 109, 211, 0.1);
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 20px;
+            min-height: calc(100vh - var(--header-height) - var(--footer-height));
+            flex-grow: 1;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-left: var(--sidebar-width);
+            padding: 15px;
+            text-align: center;
+            background-color: #fff;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.85rem;
+            height: var(--footer-height);
+            position: relative;
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+        }
+        
+        /* Mobile toggle button */
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        @media (max-width: 992px) {
+            .mobile-toggle {
+                display: block;
+            }
+        }
+        
+        /* Right sidebar */
+        .right-sidebar {
+            position: fixed;
+            top: var(--header-height);
+            right: 0;
+            bottom: 0;
+            width: 280px;
+            background-color: white;
+            border-left: 1px solid #e9ecef;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -1px 0 5px rgba(0,0,0,0.05);
+            z-index: 800;
+        }
+        
+        /* Cards and other components */
+        .card {
+            background-color: white;
+            border-radius: 0.375rem;
+            box-shadow: var(--card-shadow);
+            border: none;
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            font-weight: 500;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .health-doc-card {
+            background: white;
+            padding: 15px;
+            border-radius: 0.375rem;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .health-doc-thumb {
+            max-width: 100%;
+            max-height: 150px;
+            margin-bottom: 10px;
+            border-radius: 0.25rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: #6c757d;
+        }
+        
+        /* Override Bootstrap */
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #3058b0;
+            border-color: #3058b0;
+        }
+        
+        .bg-primary {
+            background-color: var(--primary-color) !important;
+        }
+        
+    </style>
+    {% block extra_css %}{% endblock %}
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <button class="mobile-toggle" id="sidebarToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="header-brand">
+            HD Pilates Studio - CRM
+        </div>
+        <nav class="header-nav">
+            <a href="#" class="header-nav-item">
+                <i class="fas fa-bell"></i>
+                <span class="d-none d-md-inline">Thông báo</span>
+            </a>
+            <a href="#" class="header-nav-item">
+                <i class="fas fa-cog"></i>
+                <span class="d-none d-md-inline">Cài đặt</span>
+            </a>
+            <a href="{% url 'admin:index' %}" class="header-nav-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span class="d-none d-md-inline">Admin</span>
+            </a>
+            <a href="#" class="header-nav-item">
+                <i class="fas fa-user-circle"></i>
+                <span class="d-none d-md-inline">{{ request.user.username }}</span>
+            </a>
+            <a href="{% url 'logout' %}" class="header-nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="d-none d-md-inline">Đăng xuất</span>
+            </a>
+        </nav>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <ul class="sidebar-menu">
+            <li><a href="{% url 'dashboard:main_dashboard' %}" class="{% if request.path == '/hdcrm/' %}active{% endif %}">
+                <i class="fas fa-home"></i> Trang chủ
+            </a></li>
+            <li><a href="{% url 'dashboard:customer_dashboard' %}" class="{% if '/hdcrm/customers/' in request.path %}active{% endif %}">
+                <i class="fas fa-users"></i> Khách hàng
+            </a></li>
+            <li><a href="{% url 'dashboard:class_schedule_calendar' %}" class="{% if '/hdcrm/lich-hoc/' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-alt"></i> Lịch học
+            </a></li>
+            
+            <div class="sidebar-section-title">QUẢN LÝ</div>
+            <li><a href="{% url 'dashboard:classtype_list' %}" class="{% if '/hdcrm/lop-hoc/' in request.path %}active{% endif %}">
+                <i class="fas fa-dumbbell"></i> Lớp học
+            </a></li>
+            <li><a href="{% url 'dashboard:instructor_list' %}" class="{% if '/hdcrm/instructors/' in request.path %}active{% endif %}">
+                <i class="fas fa-chalkboard-teacher"></i> Huấn luyện viên
+            </a></li>
+            <li><a href="{% url 'dashboard:package_list' %}" class="{% if '/hdcrm/goi-tap/' in request.path %}active{% endif %}">
+                <i class="fas fa-box"></i> Gói tập
+            </a></li>
+            
+            <div class="sidebar-section-title">THANH TOÁN</div>
+            <li><a href="/payments/" class="{% if '/payments/' in request.path %}active{% endif %}">
+                <i class="fas fa-credit-card"></i> Thanh toán
+            </a></li>
+            <li><a href="/payments/them-moi/" class="{% if '/payments/them-moi/' in request.path %}active{% endif %}">
+                <i class="fas fa-plus-circle"></i> Tạo đơn hàng
+            </a></li>
+            <li><a href="#">
+                <i class="fas fa-money-bill-wave"></i> Chi phí
+            </a></li>
+            
+            <div class="sidebar-section-title">TÀI LIỆU</div>
+            <li><a href="#" class="{% if '/hdcrm/tai-lieu/' in request.path %}active{% endif %}">
+                <i class="fas fa-folder"></i> Tài liệu sức khỏe
+            </a></li>
+            
+            <div class="sidebar-section-title">HỆ THỐNG</div>
+            <li><a href="{% url 'dashboard:branch_list' %}" class="{% if '/hdcrm/chi-nhanh/' in request.path %}active{% endif %}">
+                <i class="fas fa-store"></i> Chi nhánh
+            </a></li>
+            <li><a href="{% url 'dashboard:user_list' %}" class="{% if '/hdcrm/nguoi-dung/' in request.path %}active{% endif %}">
+                <i class="fas fa-users-cog"></i> Người dùng
+            </a></li>
+        </ul>
+    </aside>
+    
+    <!-- Main content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Right sidebar - Chỉ hiển thị khi có nội dung -->
+    <div id="right-sidebar-content" style="display: none;">
+        {% block right_sidebar %}{% endblock %}
+    </div>
+    
+    <!-- Sidebar container sẽ được tạo bởi JavaScript nếu cần -->
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    HD Pilates Studio CRM &copy; 2025 - Phát triển bởi Hoài
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sidebar toggle for mobile
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('show');
+        });
+        
+        // Hide sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            
+            if (window.innerWidth <= 992 && sidebar.classList.contains('show') && 
+                !sidebar.contains(event.target) && event.target !== toggle) {
+                sidebar.classList.remove('show');
+            }
+        });
+        
+        // Responsive adjustments
+        function adjustLayout() {
+            const windowWidth = window.innerWidth;
+            const rightSidebar = document.querySelector('.right-sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (rightSidebar) {
+                if (windowWidth <= 992) {
+                    mainContent.style.marginRight = '0';
+                } else {
+                    mainContent.style.marginRight = '280px';
+                }
+            }
+        }
+        
+        // Kiểm tra xem phần right_sidebar có nội dung không
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cập nhật sidebar dựa trên nội dung
+            const rightSidebarBlock = document.getElementById('right-sidebar-content');
+            
+            if (rightSidebarBlock) {
+                const content = rightSidebarBlock.innerHTML.trim();
+                if (content) {
+                    // Có nội dung, tạo right sidebar
+                    const rightSidebar = document.createElement('aside');
+                    rightSidebar.className = 'right-sidebar';
+                    rightSidebar.innerHTML = content;
+                    document.body.appendChild(rightSidebar);
+                    
+                    // Điều chỉnh main content
+                    adjustLayout();
+                }
+            }
+        });
+        
+        // Initialize and update on resize
+        window.addEventListener('resize', adjustLayout);
+        adjustLayout();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

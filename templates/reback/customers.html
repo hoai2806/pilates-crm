@@ -1,0 +1,240 @@
+{% extends 'reback/layout.html' %}
+{% load i18n %}
+{% load mathfilters %}
+{% load custom_filters %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'reback:index' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block page_heading %}
+<div class="d-flex justify-content-between align-items-center">
+    {{ title }}
+    <a href="{% url 'reback:customer_add' %}" class="btn btn-primary">
+        <i class="ri-add-line me-1"></i> Thêm mới khách hàng
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Bộ lọc ngày -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{% url 'reback:customers' %}" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="start_date" class="form-label">Từ ngày</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
+            </div>
+            <div class="col-md-4">
+                <label for="end_date" class="form-label">Đến ngày</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Lọc</button>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'reback:customers' %}" class="btn btn-secondary w-100">Xóa lọc</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Biểu đồ và Kanban Board -->
+<div class="row">
+    <!-- Biểu đồ trạng thái khách hàng -->
+    <div class="col-lg-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Biểu đồ trạng thái khách hàng</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="customerStatusChart" style="height:300px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kanban Board -->
+    {% for status_key, display_name in kanban_status_map.items %}
+    <div class="col-md-6 col-lg-4 mb-4"> {# Điều chỉnh cột cho responsive tốt hơn #}
+        <div class="card h-100">
+            <div class="kanban-column-header">
+                <h5>{{ display_name }} ({{ customer_status_data|get_item:status_key|default:0 }})</h5>
+            </div>
+            <div class="card-body p-2 kanban-column">
+                {% with customer_list=customers_for_kanban|get_item:status_key %}
+                    {% if customer_list %}
+                        {% for customer in customer_list %}
+                        <div class="card mb-2 shadow-sm customer-kanban-card">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    {% if customer.profile_image %}
+                                        <img src="{{ customer.profile_image.url }}" class="rounded-circle me-3" width="40" height="40" alt="{{ customer.full_name }}" style="object-fit: cover;">
+                                    {% else %}
+                                        <div class="avatar-initials rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-size: 1rem; background-color: #8A2BE2; color: white;">
+                                            {{ customer.full_name|slice:":1"|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <h6 class="mb-0">{{ customer.full_name }}</h6>
+                                </div>
+                                <p class="mb-1 text-muted fs-sm">
+                                    <i class="ri-phone-line me-1"></i>{{ customer.phone|default:"Chưa có SĐT" }}
+                                </p>
+                                <p class="mb-1 text-muted fs-sm">
+                                    <i class="ri-calendar-event-line me-1"></i>{% if customer.registration_date %}Ngày {{ customer.registration_date|date:"j" }} tháng {{ customer.registration_date|date:"n" }} năm {{ customer.registration_date|date:"Y" }}{% else %}Chưa có ngày{% endif %}
+                                </p>
+                                <p class="mb-2 text-muted fs-sm">
+                                    <i class="ri-information-line me-1"></i>{{ customer.source|default:"Không rõ nguồn" }}
+                                </p>
+                                <div class="mt-2 pt-2 border-top">
+                                    <a href="{% url 'reback:customer_detail' customer.pk %}" class="btn btn-primary btn-sm me-1">
+                                        <i class="ri-eye-line me-1"></i>Xem
+                                    </a>
+                                    <a href="{% url 'reback:customer_edit' customer.pk %}" class="btn btn-success btn-sm me-1">
+                                        <i class="ri-pencil-line me-1"></i>Sửa
+                                    </a>
+                                    <a href="{% url 'reback:customer_delete' customer.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc chắn muốn xóa khách hàng này không?');">
+                                        <i class="ri-delete-bin-line me-1"></i>Xóa
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center p-3">Không có khách hàng nào</p>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.kanban-column-header {
+    background: linear-gradient(to right, #6A5ACD, #8A2BE2); /* Blue-Purple Gradient */
+    color: white;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid rgba(0,0,0,.125);
+    border-top-left-radius: .25rem; /* Match card's border radius */
+    border-top-right-radius: .25rem; /* Match card's border radius */
+}
+.kanban-column-header h5 {
+    margin-bottom: 0;
+    color: white !important; /* Ensure text color is white */
+    font-size: 0.95rem; /* Adjust size if needed */
+}
+
+.kanban-column {
+    max-height: 450px; /* Increased height slightly */
+    overflow-y: auto;
+    background-color: #f8f9fa; /* Light grey background for the column content area */
+}
+/* Scrollbar styling for webkit browsers */
+.kanban-column::-webkit-scrollbar {
+    width: 6px;
+}
+.kanban-column::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+.kanban-column::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+.kanban-column::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+
+.customer-kanban-card .card-body {
+    padding: 0.9rem; /* Slightly adjusted padding for card content */
+}
+
+.customer-kanban-card h6 {
+    font-size: 0.9rem; /* Customer name size */
+    font-weight: 500;
+}
+.customer-kanban-card .fs-sm {
+    font-size: 0.8rem; /* Slightly smaller for details */
+}
+.customer-kanban-card .avatar-initials {
+    font-weight: bold;
+}
+.customer-kanban-card .btn-sm {
+    padding: 0.25rem 0.6rem; /* Adjust button padding */
+    font-size: 0.75rem; /* Adjust button font size */
+}
+.customer-kanban-card .border-top {
+    border-top-color: #e9ecef !important; /* Lighter border color */
+}
+</style>
+
+{% endblock content %}
+
+{% block extra_javascript %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartLabels = JSON.parse('{{ chart_labels|safe }}');
+    const chartData = JSON.parse('{{ chart_data|safe }}');
+
+    // Check if the canvas element exists
+    const canvasElement = document.getElementById('customerStatusChart');
+    if (!canvasElement) {
+        console.warn('customerStatusChart element not found. Chart will not be rendered.');
+        return;
+    }
+
+    const ctx = canvasElement.getContext('2d');
+    const customerStatusChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Số lượng khách hàng',
+                data: chartData,
+                backgroundColor: [
+                    'rgba(86, 100, 210, 0.5)', // contact (primary)
+                    'rgba(23, 162, 184, 0.5)', // trial (info)
+                    'rgba(40, 167, 69, 0.5)',  // purchased (success)
+                    'rgba(108, 99, 255, 0.5)', // repurchased (purple)
+                    'rgba(255, 193, 7, 0.5)',  // no_trial (warning)
+                    'rgba(220, 53, 69, 0.5)',  // no_purchase (danger)
+                    'rgba(108, 117, 125, 0.5)' // no_repurchase (secondary)
+                ],
+                borderColor: [
+                    'rgba(86, 100, 210, 1)',
+                    'rgba(23, 162, 184, 1)',
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(108, 99, 255, 1)',
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(220, 53, 69, 1)',
+                    'rgba(108, 117, 125, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock extra_javascript %} 

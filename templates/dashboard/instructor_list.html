@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Danh sách huấn luyện viên{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4>Danh sách huấn luyện viên</h4>
+        </div>
+        <div class="card-body">
+            <div class="mb-3 text-right">
+                <a href="#" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Thêm huấn luyện viên mới
+                </a>
+            </div>
+            
+            {% if instructors %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Tên</th>
+                                <th>Số điện thoại</th>
+                                <th>Email</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for instructor in instructors %}
+                                <tr>
+                                    <td>{{ instructor.full_name }}</td>
+                                    <td>{{ instructor.phone }}</td>
+                                    <td>{{ instructor.email|default:"--" }}</td>
+                                    <td>
+                                        {% if instructor.is_active %}
+                                            <span class="badge badge-success">Đang hoạt động</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">Không hoạt động</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> Xem
+                                        </a>
+                                        <a href="#" class="btn btn-sm btn-success">
+                                            <i class="fas fa-edit"></i> Sửa
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    Không có huấn luyện viên nào trong hệ thống.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

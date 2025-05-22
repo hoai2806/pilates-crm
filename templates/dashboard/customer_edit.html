@@ -1,0 +1,279 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Sửa khách hàng: {{ customer.full_name }}{% endblock %}
+{% block right_sidebar %}
+    <div class="card p-4 my-4">
+        <h5 class="mb-3">Điểm danh liên quan</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Ngày học</th>
+                        <th>Buổi học</th>
+                        <th>HLV</th>
+                        <th>Trạng thái</th>
+                        <th>Gói sử dụng</th>
+                        <th>Ghi chú điểm danh</th>
+                        <th>Xem</th>
+                        <th>Sửa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attendance in attendance_history %}
+                    <tr>
+                        <td>{% if attendance.class_session.specific_date %}{{ attendance.class_session.specific_date|date:'d/m/Y' }} {{ attendance.class_session.start_time|time:'H:i' }}{% else %}N/A{% endif %}</td>
+                        <td>{{ attendance.class_session.class_type.name }}</td>
+                        <td>{{ attendance.class_session.instructor.full_name|default:'N/A' }}</td>
+                        <td>{% if attendance.attended %}<span class="badge bg-success">Đã tham dự</span>{% elif attendance.status == 'absent_notified' %}<span class="badge bg-warning">Vắng (báo trước)</span>{% elif attendance.status == 'absent_unnotified' %}<span class="badge bg-danger">Vắng (không báo)</span>{% else %}<span class="badge bg-secondary">Chưa điểm danh</span>{% endif %}</td>
+                        <td>{% if attendance.customer_package %}{{ attendance.customer_package.class_type.name }} ({{ attendance.customer_package.purchase_date|date:'d/m' }}){% else %}N/A{% endif %}</td>
+                        <td>{{ attendance.notes|default:'' }}</td>
+                        <td><a href="#" class="btn btn-info btn-sm">Xem</a></td>
+                        <td><a href="#" class="btn btn-warning btn-sm">Sửa</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" class="text-center">Chưa có lịch sử điểm danh</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>Chỉnh sửa thông tin khách hàng</h2>
+            <a href="{% url 'dashboard:customer_detail' customer.id %}" class="btn btn-secondary btn-sm mb-3">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </a>
+        </div>
+    </div>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Thông tin cơ bản -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Thông tin cơ bản</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="full_name" value="{{ customer.full_name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="phone" value="{{ customer.phone }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Địa chỉ</label>
+                            <input type="text" class="form-control" name="address" value="{{ customer.address|default:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ngày sinh</label>
+                            <input type="date" class="form-control" name="date_of_birth" value="{{ customer.date_of_birth|date:'Y-m-d' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Giới tính</label>
+                            <select class="form-select" name="gender">
+                                <option value="M" {% if customer.gender == 'M' %}selected{% endif %}>Nam</option>
+                                <option value="F" {% if customer.gender == 'F' %}selected{% endif %}>Nữ</option>
+                                <option value="O" {% if customer.gender == 'O' %}selected{% endif %}>Khác</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Liên hệ khẩn cấp</label>
+                            <input type="text" class="form-control" name="emergency_contact" value="{{ customer.emergency_contact|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Thông tin phụ huynh -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Thông tin phụ huynh (nếu có)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Họ và tên phụ huynh</label>
+                            <input type="text" class="form-control" name="parent_name" value="{{ customer.parent_name|default:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Số điện thoại phụ huynh</label>
+                            <input type="text" class="form-control" name="parent_phone" value="{{ customer.parent_phone|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Thông tin bổ sung -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Thông tin sức khỏe & ghi chú</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Vấn đề sức khỏe</label>
+                            <textarea class="form-control" name="health_issues" rows="3">{{ customer.health_issues|default:'' }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ghi chú</label>
+                            <textarea class="form-control" name="notes" rows="3">{{ customer.notes|default:'' }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ảnh đại diện</label>
+                            {% if customer.profile_image %}
+                                <div class="mb-2">
+                                    <img src="{{ customer.profile_image.url }}" alt="Profile" style="max-width: 100px; max-height: 100px;">
+                                </div>
+                            {% endif %}
+                            <input type="file" class="form-control" name="profile_image">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Thông tin khách hàng -->
+                <div class="card mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">Thông tin khách hàng</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Trạng thái khách hàng</label>
+                            <select class="form-select" name="status">
+                                <option value="contact" {% if customer.status == 'contact' %}selected{% endif %}>Liên hệ</option>
+                                <option value="trial" {% if customer.status == 'trial' %}selected{% endif %}>Tập thử</option>
+                                <option value="purchased" {% if customer.status == 'purchased' %}selected{% endif %}>Mua gói</option>
+                                <option value="repurchased" {% if customer.status == 'repurchased' %}selected{% endif %}>Tái mua</option>
+                                <option value="no_trial" {% if customer.status == 'no_trial' %}selected{% endif %}>Không đến tập thử</option>
+                                <option value="no_purchase" {% if customer.status == 'no_purchase' %}selected{% endif %}>Không mua</option>
+                                <option value="no_repurchase" {% if customer.status == 'no_repurchase' %}selected{% endif %}>Không tái mua</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nguồn khách hàng</label>
+                            <select class="form-select" name="source">
+                                <option value="referral" {% if customer.source == 'referral' %}selected{% endif %}>Giới thiệu</option>
+                                <option value="fanpage" {% if customer.source == 'fanpage' %}selected{% endif %}>Fanpage</option>
+                                <option value="google_map" {% if customer.source == 'google_map' %}selected{% endif %}>Google map</option>
+                                <option value="direct" {% if customer.source == 'direct' %}selected{% endif %}>Trực tiếp</option>
+                                <option value="social_media" {% if customer.source == 'social_media' %}selected{% endif %}>Social media</option>
+                                <option value="other" {% if customer.source == 'other' %}selected{% endif %}>Kênh khác</option>
+                            </select>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="active" id="active" {% if customer.active %}checked{% endif %}>
+                            <label class="form-check-label" for="active">Khách hàng đang hoạt động</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tài liệu sức khỏe -->
+            <div class="col-12">
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">Tài liệu sức khỏe</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tải lên các tài liệu sức khỏe mới</label>
+                            <input type="file" class="form-control" name="health_documents" multiple accept="image/*,application/pdf,video/*">
+                            <small class="text-muted">Hỗ trợ tải lên hình ảnh, PDF, video và các tài liệu khác.</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả tài liệu</label>
+                            <textarea class="form-control" name="health_documents_description"></textarea>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <!-- Liên kết với thanh toán -->
+                            <div class="col-md-6">
+                                <label class="form-label">Liên kết với đơn thanh toán</label>
+                                <select class="form-select" name="health_doc_payment">
+                                    <option value="">-- Không liên kết --</option>
+                                    {% for payment in payments %}
+                                    <option value="{{ payment.id }}">
+                                        {{ payment.payment_date|date:"d/m/Y" }} - {{ payment.amount|floatformat:0 }} VNĐ
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Liên kết với điểm danh -->
+                            <div class="col-md-6">
+                                <label class="form-label">Liên kết với buổi tập</label>
+                                <select class="form-select" name="health_doc_attendance">
+                                    <option value="">-- Không liên kết --</option>
+                                    {% for attendance in attendances %}
+                                    <option value="{{ attendance.id }}">
+                                        {{ attendance.class_session.get_date_display }} - {{ attendance.class_session.class_type.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Danh sách tài liệu hiện có -->
+                        <div class="mt-4">
+                            <h6>Tài liệu hiện có</h6>
+                            <div class="row">
+                                {% for doc in customer.health_documents.all %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            {% if doc.document_type == 'image' %}
+                                                <img src="{{ doc.file.url }}" class="img-thumbnail mb-2" style="max-height: 150px;">
+                                            {% elif doc.document_type == 'pdf' %}
+                                                <div class="pdf-icon mb-2">
+                                                    <i class="far fa-file-pdf fa-3x text-danger"></i>
+                                                </div>
+                                            {% elif doc.document_type == 'video' %}
+                                                <div class="video-icon mb-2">
+                                                    <i class="far fa-file-video fa-3x text-primary"></i>
+                                                </div>
+                                            {% else %}
+                                                <div class="file-icon mb-2">
+                                                    <i class="far fa-file fa-3x text-secondary"></i>
+                                                </div>
+                                            {% endif %}
+                                            
+                                            <p class="small text-muted mb-1">
+                                                Ngày tải lên: {{ doc.upload_date|date:"d/m/Y" }}
+                                            </p>
+                                            <p class="small mb-1">{{ doc.description|default:"Không có mô tả" }}</p>
+                                            <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                                Xem file
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="col-12">
+                                    <p class="text-muted">Chưa có tài liệu sức khỏe nào.</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Nút lưu -->
+            <div class="col-12 text-center mb-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Lưu thay đổi
+                </button>
+                <a href="{% url 'dashboard:customer_detail' customer.id %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Hủy
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %} 

@@ -1,0 +1,193 @@
+{% extends "dashboard/base.html" %}
+
+{% load static %}
+
+{% block title %}Quản lý gói tập - HD Pilates Studio{% endblock %}
+
+{% block extra_css %}
+<style>
+  .filter-bar {
+    background-color: white;
+    padding: 15px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+  }
+  .filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .filter-form .form-group {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 200px;
+  }
+  .filter-form .btn {
+    height: 38px;
+  }
+  .table-container {
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    overflow-x: auto;
+  }
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  .pagination .page-link {
+    color: var(--primary-color);
+  }
+  .pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="content-header d-flex justify-content-between align-items-center mb-4">
+    <h2 class="m-0">Quản lý gói tập</h2>
+    <a href="{% url 'dashboard:package_form' %}" class="btn btn-primary">
+      <i class="fas fa-plus"></i> Thêm gói tập
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <form method="get" class="filter-form">
+      <div class="form-group">
+        <label for="search">Tìm kiếm</label>
+        <input type="text" class="form-control" id="search" name="q" placeholder="Tên khách hàng, loại lớp..." value="{{ search_query }}">
+      </div>
+      <div class="form-group">
+        <label for="status">Trạng thái</label>
+        <select class="form-control" id="status" name="status">
+          <option value="">Tất cả trạng thái</option>
+          {% for value, label in statuses %}
+            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="class_type">Loại lớp</label>
+        <select class="form-control" id="class_type" name="class_type">
+          <option value="">Tất cả loại lớp</option>
+          {% for class_type in class_types %}
+            <option value="{{ class_type.id }}" {% if class_type_filter == class_type.id|stringformat:"i" %}selected{% endif %}>{{ class_type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-search"></i> Lọc
+      </button>
+      <a href="{% url 'dashboard:package_list' %}" class="btn btn-secondary">
+        <i class="fas fa-sync-alt"></i> Đặt lại
+      </a>
+    </form>
+  </div>
+
+  <!-- Packages list -->
+  <div class="table-container">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Khách hàng</th>
+          <th>Loại lớp</th>
+          <th>Số buổi</th>
+          <th>Buổi còn lại</th>
+          <th>Ngày bắt đầu</th>
+          <th>Ngày kết thúc</th>
+          <th>Trạng thái</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for package in packages %}
+          <tr>
+            <td>
+              <a href="{% url 'dashboard:customer_detail' package.customer.id %}" title="Xem chi tiết khách hàng">
+                {{ package.customer.full_name }}
+              </a>
+            </td>
+            <td>{{ package.class_type.name }}</td>
+            <td>{{ package.total_sessions }}</td>
+            <td>{{ package.remaining_sessions }}</td>
+            <td>{{ package.start_date|date:"d/m/Y" }}</td>
+            <td>{% if package.end_date %}{{ package.end_date|date:"d/m/Y" }}{% else %}-{% endif %}</td>
+            <td>
+              {% if package.status == 'active' %}
+                <span class="badge bg-success">{{ package.get_status_display }}</span>
+              {% elif package.status == 'pending' %}
+                <span class="badge bg-warning text-dark">{{ package.get_status_display }}</span>
+              {% else %}
+                <span class="badge bg-danger">{{ package.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{% url 'dashboard:package_edit' package.id %}" class="btn btn-sm btn-warning">
+                <i class="fas fa-edit"></i>
+              </a>
+              <a href="{% url 'dashboard:package_delete' package.id %}" class="btn btn-sm btn-danger">
+                <i class="fas fa-trash"></i>
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" class="text-center">Không tìm thấy gói tập nào.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if packages.paginator.num_pages > 1 %}
+    <div class="pagination-container">
+      <ul class="pagination">
+        {% if packages.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1{% if search_query %}&q={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if class_type_filter %}&class_type={{ class_type_filter }}{% endif %}">
+              <i class="fas fa-angle-double-left"></i>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ packages.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if class_type_filter %}&class_type={{ class_type_filter }}{% endif %}">
+              <i class="fas fa-angle-left"></i>
+            </a>
+          </li>
+        {% endif %}
+
+        {% for p in packages.paginator.page_range %}
+          {% if p|add:"-4" <= packages.number and p|add:"4" >= packages.number %}
+            <li class="page-item {% if packages.number == p %}active{% endif %}">
+              <a class="page-link" href="?page={{ p }}{% if search_query %}&q={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if class_type_filter %}&class_type={{ class_type_filter }}{% endif %}">
+                {{ p }}
+              </a>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        {% if packages.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ packages.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if class_type_filter %}&class_type={{ class_type_filter }}{% endif %}">
+              <i class="fas fa-angle-right"></i>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ packages.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if class_type_filter %}&class_type={{ class_type_filter }}{% endif %}">
+              <i class="fas fa-angle-double-right"></i>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  {% endif %}
+</div>
+{% endblock %} 

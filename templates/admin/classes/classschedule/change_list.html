@@ -1,0 +1,470 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<style>
+    #calendar-container {
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        margin: 20px 0;
+    }
+    
+    /* Fix cho FC để tránh xung đột với CSS admin */
+    .fc {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        font-size: 1rem !important;
+    }
+    .fc .fc-button {
+        font-weight: 400 !important;
+        text-transform: none !important;
+        padding: 0.4em 0.65em !important;
+        background-color: #417690 !important;
+        border-color: #417690 !important;
+    }
+    .fc .fc-button:hover {
+        background-color: #2e5774 !important;
+    }
+    .fc .fc-button-primary:not(:disabled).fc-button-active {
+        background-color: #2e5774 !important;
+        border-color: #2e5774 !important;
+        font-weight: bold !important;
+    }
+    .fc .fc-toolbar-title {
+        font-size: 1.5em !important;
+        margin: 0 !important;
+        color: #417690 !important;
+    }
+    
+    /* Thiết lập màu chữ đen cho tất cả các event trên calendar */
+    .fc-event-title, .fc-event-time, .fc-event {
+        color: #000000 !important; /* Màu đen */
+        font-weight: bold !important;
+    }
+    /* Đảm bảo các event có màu nền tối vẫn hiển thị chữ đen rõ ràng */
+    .fc-event.bg-primary .fc-event-title,
+    .fc-event.bg-primary .fc-event-time,
+    .fc-event.bg-secondary .fc-event-title,
+    .fc-event.bg-secondary .fc-event-time,
+    .fc-event.bg-success .fc-event-title,
+    .fc-event.bg-success .fc-event-time,
+    .fc-event.bg-danger .fc-event-title,
+    .fc-event.bg-danger .fc-event-time,
+    .fc-event.bg-warning .fc-event-title,
+    .fc-event.bg-warning .fc-event-time,
+    .fc-event.bg-info .fc-event-title,
+    .fc-event.bg-info .fc-event-time,
+    .fc-event.bg-dark .fc-event-title,
+    .fc-event.bg-dark .fc-event-time {
+        color: #000000 !important;
+        text-shadow: 0px 0px 2px rgba(255, 255, 255, 0.7) !important; /* Thêm bóng chữ trắng để dễ đọc trên nền tối */
+    }
+    
+    .fc-event {
+        cursor: pointer;
+    }
+    .fc-event-title {
+        font-weight: bold;
+    }
+    .calendar-stats {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        gap: 20px;
+    }
+    .stats-card {
+        flex: 1;
+        min-width: 300px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        padding: 15px;
+    }
+    .stats-card h3 {
+        margin-top: 0;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+        color: #6f42c1;
+    }
+    .stats-chart-container {
+        height: 250px;
+        position: relative;
+    }
+    .event-tooltip {
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        padding: 10px;
+        z-index: 1000;
+        position: absolute;
+        max-width: 300px;
+    }
+    .event-tooltip h4 {
+        margin-top: 0;
+        margin-bottom: 5px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+        color: #417690;
+    }
+    .event-tooltip p {
+        margin: 5px 0;
+    }
+    .event-tooltip-close {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        cursor: pointer;
+    }
+    .toggle-view-btn {
+        background-color: #417690;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        cursor: pointer;
+    }
+    .toggle-view-btn:hover {
+        background-color: #2e5774;
+    }
+    .display-none {
+        display: none;
+    }
+    h1.calendar-title {
+        color: #6f42c1;
+        margin-bottom: 20px;
+    }
+    .page-header {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <button class="toggle-view-btn" id="toggle-view">Chuyển sang Chế độ danh sách</button>
+    
+    <div id="list-view" class="display-none">
+        {{ block.super }}
+    </div>
+    
+    <div id="calendar-view">
+        <div class="page-header">
+            <h1 class="calendar-title">Lịch học & cuộc hẹn</h1>
+        </div>
+        
+        <div class="calendar-stats">
+            <div class="stats-card">
+                <h3>Loại lớp học phổ biến</h3>
+                <div class="stats-chart-container">
+                    <canvas id="class-types-chart"></canvas>
+                </div>
+            </div>
+            <div class="stats-card">
+                <h3>Huấn luyện viên hoạt động nhiều nhất</h3>
+                <div class="stats-chart-container">
+                    <canvas id="instructors-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; margin-bottom: 15px; text-align: right;">
+            <a href="{% url 'admin:classes_classschedule_add' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Thêm vào Lịch học
+            </a>
+        </div>
+        
+        <div id="calendar-container">
+            <div id="calendar"></div>
+        </div>
+        
+        <div id="event-tooltip" class="event-tooltip" style="display: none;">
+            <span class="event-tooltip-close">&times;</span>
+            <h4 id="tooltip-title"></h4>
+            <div id="tooltip-content"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle giữa view danh sách và lịch
+        const toggleBtn = document.getElementById('toggle-view');
+        const listView = document.getElementById('list-view');
+        const calendarView = document.getElementById('calendar-view');
+        
+        toggleBtn.addEventListener('click', function() {
+            if (listView.classList.contains('display-none')) {
+                listView.classList.remove('display-none');
+                calendarView.classList.add('display-none');
+                toggleBtn.textContent = 'Chuyển sang Chế độ lịch';
+            } else {
+                listView.classList.add('display-none');
+                calendarView.classList.remove('display-none');
+                toggleBtn.textContent = 'Chuyển sang Chế độ danh sách';
+                
+                // Trigger resize để FullCalendar tự điều chỉnh kích thước
+                window.dispatchEvent(new Event('resize'));
+            }
+        });
+        
+        // Khởi tạo FullCalendar
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            initialView: 'dayGridMonth',
+            themeSystem: 'bootstrap',
+            locale: 'vi',
+            height: 'auto',
+            allDaySlot: false,
+            navLinks: true,
+            dayMaxEvents: true,
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            },
+            businessHours: {
+                daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+                startTime: '06:00',
+                endTime: '22:00'
+            },
+            slotMinTime: '06:00',
+            slotMaxTime: '22:00',
+            events: function(info, successCallback, failureCallback) {
+                // Gọi API để lấy danh sách sự kiện
+                console.log('FullCalendar info.startStr:', info.startStr);
+                console.log('FullCalendar info.endStr:', info.endStr);
+
+                fetch(`/calendar/api/events/?start=${info.startStr}&end=${info.endStr}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        successCallback(data);
+                    })
+                    .catch(error => {
+                        console.error('Error loading events:', error);
+                        failureCallback(error);
+                    });
+            },
+            eventClick: function(info) {
+                showEventTooltip(info.event, info.el);
+                // Không điều hướng đến URL
+                info.jsEvent.preventDefault();
+            },
+            datesSet: function(dateInfo) {
+                console.log('datesSet - startStr:', dateInfo.startStr);
+                console.log('datesSet - endStr:', dateInfo.endStr);
+                updateStatistics(dateInfo.startStr, dateInfo.endStr);
+            }
+        });
+        
+        calendar.render();
+        
+        // Xử lý tooltip sự kiện
+        function showEventTooltip(event, element) {
+            var jsEvent = event.jsEvent;
+            var tooltip = document.getElementById('event-tooltip');
+            var titleEl = document.getElementById('tooltip-title');
+            var contentEl = document.getElementById('tooltip-content');
+            
+            // Cập nhật nội dung tooltip
+            titleEl.textContent = event.title;
+            
+            var content = '';
+            var props = event.extendedProps;
+            
+            if (props.type === 'class' || props.type === 'recurring_class') {
+                content += `<p><strong>Giảng viên:</strong> ${props.instructor}</p>`;
+                content += `<p><strong>Phòng:</strong> ${props.room}</p>`;
+                content += `<p><strong>Trạng thái:</strong> ${translateStatus(props.status)}</p>`;
+                content += `<p><a href="${event.url}" target="_blank">Xem chi tiết</a></p>`;
+            } else if (props.type === 'appointment') {
+                content += `<p><strong>Khách hàng:</strong> ${props.customer}</p>`;
+                content += `<p><strong>Giảng viên:</strong> ${props.instructor || 'Chưa phân công'}</p>`;
+                if (props.content) {
+                    content += `<p><strong>Nội dung:</strong> ${props.content}</p>`;
+                }
+                content += `<p><a href="${event.url}" target="_blank">Xem chi tiết</a></p>`;
+            }
+            
+            contentEl.innerHTML = content;
+            
+            // Hiển thị tooltip trước để tính toán kích thước
+            tooltip.style.display = 'block';
+            tooltip.style.visibility = 'hidden';
+            
+            var tooltipWidth = tooltip.offsetWidth;
+            var tooltipHeight = tooltip.offsetHeight;
+            var viewportWidth = window.innerWidth;
+            var viewportHeight = window.innerHeight;
+            var scrollX = window.scrollX;
+            var scrollY = window.scrollY;
+
+            // Lấy tọa độ click chuột
+            var clickX = jsEvent.pageX;
+            var clickY = jsEvent.pageY;
+
+            // Đặt vị trí mặc định của tooltip (ví dụ: 15px bên phải và 10px bên dưới con trỏ chuột)
+            var left = clickX + 15;
+            var top = clickY + 10;
+
+            // Điều chỉnh nếu tooltip tràn ra khỏi màn hình bên phải
+            if (left + tooltipWidth > scrollX + viewportWidth - 10) { // Thêm 10px padding
+                left = clickX - tooltipWidth - 15; // Chuyển sang bên trái con trỏ
+            }
+
+            // Điều chỉnh nếu tooltip tràn ra khỏi màn hình bên dưới
+            if (top + tooltipHeight > scrollY + viewportHeight - 10) { // Thêm 10px padding
+                top = clickY - tooltipHeight - 10; // Chuyển lên trên con trỏ
+            }
+            
+            // Đảm bảo tooltip không bị đẩy ra ngoài màn hình bên trái
+            if (left < scrollX + 10) {
+                left = scrollX + 10;
+            }
+
+            // Đảm bảo tooltip không bị đẩy ra ngoài màn hình bên trên
+            if (top < scrollY + 10) {
+                top = scrollY + 10;
+            }
+            
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+            
+            tooltip.style.visibility = 'visible';
+            
+            document.addEventListener('click', closeTooltipOnClickOutside);
+        }
+        
+        function closeTooltipOnClickOutside(e) {
+            var tooltip = document.getElementById('event-tooltip');
+            if (!tooltip.contains(e.target) && e.target.closest('.fc-event') === null) {
+                tooltip.style.display = 'none';
+                document.removeEventListener('click', closeTooltipOnClickOutside);
+            }
+        }
+        
+        // Đóng tooltip khi click vào nút đóng
+        document.querySelector('.event-tooltip-close').addEventListener('click', function() {
+            document.getElementById('event-tooltip').style.display = 'none';
+            document.removeEventListener('click', closeTooltipOnClickOutside);
+        });
+        
+        // Hàm dịch trạng thái
+        function translateStatus(status) {
+            const statusMap = {
+                'scheduled': 'Đã lên lịch',
+                'ongoing': 'Đang diễn ra',
+                'completed': 'Đã hoàn thành',
+                'cancelled': 'Đã hủy'
+            };
+            return statusMap[status] || status;
+        }
+        
+        // Biểu đồ thống kê
+        var classTypesChart = null;
+        var instructorsChart = null;
+        
+        function updateStatistics(startDate, endDate) {
+            console.log('updateStatistics - startDate:', startDate);
+            console.log('updateStatistics - endDate:', endDate);
+
+            fetch(`/calendar/api/statistics/?start=${startDate}&end=${endDate}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Dữ liệu thống kê nhận được:', data);
+                    updateClassTypesChart(data.class_types);
+                    updateInstructorsChart(data.instructors);
+                })
+                .catch(error => console.error('Error loading statistics:', error));
+        }
+        
+        function updateClassTypesChart(data) {
+            const labels = data.map(item => item.name);
+            const values = data.map(item => item.count);
+            
+            if (classTypesChart) {
+                classTypesChart.data.labels = labels;
+                classTypesChart.data.datasets[0].data = values;
+                classTypesChart.update();
+            } else {
+                const ctx = document.getElementById('class-types-chart').getContext('2d');
+                classTypesChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Số buổi học',
+                            data: values,
+                            backgroundColor: [
+                                '#4CAF50', '#2196F3', '#FFC107', '#9C27B0', '#FF5722'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function updateInstructorsChart(data) {
+            const labels = data.map(item => item.name);
+            const values = data.map(item => item.count);
+            
+            if (instructorsChart) {
+                instructorsChart.data.labels = labels;
+                instructorsChart.data.datasets[0].data = values;
+                instructorsChart.update();
+            } else {
+                const ctx = document.getElementById('instructors-chart').getContext('2d');
+                instructorsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Số buổi học',
+                            data: values,
+                            backgroundColor: [
+                                '#2196F3', '#4CAF50', '#FFC107', '#9C27B0', '#FF5722'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    });
+</script>
+{% endblock %} 
