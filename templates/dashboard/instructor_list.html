@@ -1,19 +1,61 @@
-{% extends "base.html" %}
+{% extends "dashboard/base.html" %}
 {% load static %}
 
 {% block title %}Danh sách huấn luyện viên{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<style>
+    /* Giảm kích thước font chữ */
+    .card-header h4 {
+        font-size: 1.1rem !important;
+    }
+    
+    .table {
+        font-size: 0.85rem;
+    }
+    
+    .btn {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .pagination {
+        font-size: 0.85rem;
+    }
+    
+    .alert {
+        font-size: 0.9rem;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+</style>
+
+<div class="container-fluid mt-4">
     <div class="card">
         <div class="card-header bg-primary text-white">
-            <h4>Danh sách huấn luyện viên</h4>
+            <h4 class="m-0">Danh sách huấn luyện viên</h4>
         </div>
         <div class="card-body">
             <div class="mb-3 text-right">
-                <a href="#" class="btn btn-primary">
+                <a href="{% url 'dashboard:instructor_form' %}" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Thêm huấn luyện viên mới
                 </a>
+            </div>
+            
+            <!-- Bộ lọc tìm kiếm -->
+            <div class="filter-bar mb-4">
+                <form method="get" class="filter-form">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="q" placeholder="Tìm kiếm huấn luyện viên..." value="{{ search_query }}">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i> Tìm kiếm
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
             
             {% if instructors %}
@@ -21,9 +63,10 @@
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Tên</th>
+                                <th>Họ và tên</th>
                                 <th>Số điện thoại</th>
                                 <th>Email</th>
+                                <th>Chuyên môn</th>
                                 <th>Trạng thái</th>
                                 <th>Thao tác</th>
                             </tr>
@@ -34,19 +77,20 @@
                                     <td>{{ instructor.full_name }}</td>
                                     <td>{{ instructor.phone }}</td>
                                     <td>{{ instructor.email|default:"--" }}</td>
+                                    <td>{{ instructor.specialties|default:"--" }}</td>
                                     <td>
-                                        {% if instructor.is_active %}
-                                            <span class="badge badge-success">Đang hoạt động</span>
+                                        {% if instructor.active %}
+                                            <span class="badge bg-success text-white">Đang hoạt động</span>
                                         {% else %}
-                                            <span class="badge badge-secondary">Không hoạt động</span>
+                                            <span class="badge bg-secondary text-white">Không hoạt động</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="#" class="btn btn-sm btn-info">
-                                            <i class="fas fa-eye"></i> Xem
-                                        </a>
-                                        <a href="#" class="btn btn-sm btn-success">
+                                        <a href="{% url 'dashboard:instructor_edit' instructor.id %}" class="btn btn-sm btn-success">
                                             <i class="fas fa-edit"></i> Sửa
+                                        </a>
+                                        <a href="{% url 'dashboard:instructor_delete' instructor.id %}" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-trash"></i> Xóa
                                         </a>
                                     </td>
                                 </tr>
@@ -54,6 +98,45 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Phân trang -->
+                {% if instructors.has_other_pages %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if instructors.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ instructors.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">&laquo;</span>
+                            </li>
+                        {% endif %}
+                        
+                        {% for i in instructors.paginator.page_range %}
+                            {% if instructors.number == i %}
+                                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                            {% else %}
+                                <li class="page-item"><a class="page-link" href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ i }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if instructors.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ instructors.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">&raquo;</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
             {% else %}
                 <div class="alert alert-info">
                     Không có huấn luyện viên nào trong hệ thống.

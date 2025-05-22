@@ -1,0 +1,263 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - HD Pilates Studio{% endblock %}
+
+{% block content %}
+<style>
+    /* Giảm kích thước font chữ */
+    .card-header h4 {
+        font-size: 1.1rem !important;
+    }
+    
+    .form-label, .form-check-label, input, textarea, select, button {
+        font-size: 0.85rem;
+    }
+    
+    .form-control {
+        font-size: 0.85rem;
+        padding: 0.35rem 0.5rem;
+    }
+    
+    .btn {
+        font-size: 0.85rem;
+        padding: 0.35rem 0.7rem;
+    }
+    
+    h5 {
+        font-size: 1rem;
+    }
+    
+    h6 {
+        font-size: 0.9rem;
+    }
+    
+    .breadcrumb {
+        font-size: 0.8rem;
+    }
+    
+    .required:after {
+        content: " *";
+        color: red;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:main_dashboard' %}">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:branch_list' %}">Chi nhánh</a></li>
+                    <li class="breadcrumb-item active">{{ title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="m-0">{{ title }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2">Thông tin cơ bản</h5>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="name" class="form-label required">Tên chi nhánh</label>
+                            <input type="text" id="name" name="name" class="form-control" 
+                                value="{{ branch.name|default:'' }}" required>
+                            <div class="invalid-feedback">
+                                Vui lòng nhập tên chi nhánh
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="phone_number" class="form-label required">Số điện thoại</label>
+                            <input type="text" id="phone_number" name="phone_number" class="form-control" 
+                                value="{{ branch.phone_number|default:'' }}" required>
+                            <div class="invalid-feedback">
+                                Vui lòng nhập số điện thoại
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="google_map_url" class="form-label">Địa chỉ Google Map (URL)</label>
+                            <input type="url" id="google_map_url" name="google_map_url" class="form-control" 
+                                value="{{ branch.google_map_url|default:'' }}">
+                        </div>
+                        
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="active" name="active" 
+                                {% if branch.active|default:True %}checked{% endif %}>
+                            <label class="form-check-label" for="active">Đang hoạt động</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="address" class="form-label required">Địa chỉ</label>
+                            <textarea id="address" name="address" class="form-control" 
+                                rows="4" required>{{ branch.address|default:'' }}</textarea>
+                            <div class="invalid-feedback">
+                                Vui lòng nhập địa chỉ
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="image" class="form-label">Hình ảnh chi nhánh</label>
+                            <input type="file" id="image" name="image" class="form-control" accept="image/*">
+                            {% if branch.image %}
+                            <div class="mt-2">
+                                <img src="{{ branch.image.url }}" alt="{{ branch.name }}" class="img-thumbnail" style="max-height: 150px;">
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label for="description" class="form-label">Mô tả</label>
+                            <textarea id="description" name="description" class="form-control" 
+                                rows="5">{{ branch.description|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tiện ích -->
+                <div class="row mt-4 mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2">Tiện ích</h5>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <!-- Tiện ích - Chung -->
+                    <div class="col-md-4">
+                        <h6 class="mb-3">Tiện ích chung</h6>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_elevator" name="has_elevator" 
+                                {% if branch.has_elevator %}checked{% endif %}>
+                            <label class="form-check-label" for="has_elevator">Thang máy</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_wifi" name="has_wifi" 
+                                {% if branch.has_wifi %}checked{% endif %}>
+                            <label class="form-check-label" for="has_wifi">Wifi</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_lockers" name="has_lockers" 
+                                {% if branch.has_lockers %}checked{% endif %}>
+                            <label class="form-check-label" for="has_lockers">Tủ khóa</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_shower" name="has_shower" 
+                                {% if branch.has_shower %}checked{% endif %}>
+                            <label class="form-check-label" for="has_shower">Phòng tắm</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Tiện ích - Bãi đỗ xe và Di chuyển -->
+                    <div class="col-md-4">
+                        <h6 class="mb-3">Bãi đỗ xe & Di chuyển</h6>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_parking" name="has_parking" 
+                                {% if branch.has_parking %}checked{% endif %}>
+                            <label class="form-check-label" for="has_parking">Bãi đỗ xe</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_bike_racks" name="has_bike_racks" 
+                                {% if branch.has_bike_racks %}checked{% endif %}>
+                            <label class="form-check-label" for="has_bike_racks">Giá để xe đạp</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_accessible_parking" name="has_accessible_parking" 
+                                {% if branch.has_accessible_parking %}checked{% endif %}>
+                            <label class="form-check-label" for="has_accessible_parking">Bãi đỗ xe cho người khuyết tật</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Tiện ích - Khác -->
+                    <div class="col-md-4">
+                        <h6 class="mb-3">Tiện ích khác</h6>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_towel_service" name="has_towel_service" 
+                                {% if branch.has_towel_service %}checked{% endif %}>
+                            <label class="form-check-label" for="has_towel_service">Dịch vụ khăn tắm</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_food_drink" name="has_food_drink" 
+                                {% if branch.has_food_drink %}checked{% endif %}>
+                            <label class="form-check-label" for="has_food_drink">Đồ ăn/thức uống</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_gender_neutral_restroom" name="has_gender_neutral_restroom" 
+                                {% if branch.has_gender_neutral_restroom %}checked{% endif %}>
+                            <label class="form-check-label" for="has_gender_neutral_restroom">Nhà vệ sinh không phân biệt giới tính</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="has_childcare" name="has_childcare" 
+                                {% if branch.has_childcare %}checked{% endif %}>
+                            <label class="form-check-label" for="has_childcare">Dịch vụ trông trẻ</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Lưu chi nhánh
+                        </button>
+                        <a href="{% url 'dashboard:branch_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Hủy
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Form validation
+    (function() {
+        'use strict';
+        
+        const forms = document.querySelectorAll('.needs-validation');
+        
+        Array.from(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+</script>
+{% endblock %} 

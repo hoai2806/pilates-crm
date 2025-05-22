@@ -17,6 +17,10 @@ from payments.models import Payment
 from django.contrib.auth.models import User
 import calendar
 from dateutil.relativedelta import relativedelta
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST, require_GET
+import csv
+import logging
 
 # Create your views here.
 
@@ -439,13 +443,20 @@ def class_schedule_calendar(request):
         .order_by('-count')
     )
     
+    # Tạo các biến date presets cho filter
+    this_week = today - timedelta(days=today.weekday())
+    this_month = today.replace(day=1)
+    
     # Chuẩn bị dữ liệu
     data = {
         'class_stats': class_stats,
         'instructor_stats': instructor_stats,
         'time_stats': time_stats,
-        'filter_start_date': query_start_date.strftime('%Y-%m-%d') if query_start_date else '',
-        'filter_end_date': query_end_date.strftime('%Y-%m-%d') if query_end_date else '',
+        'filter_start_date': query_start_date,
+        'filter_end_date': query_end_date,
+        'today': today,
+        'this_week': this_week,
+        'this_month': this_month,
     }
     
     # Trả về JSON nếu format=json
@@ -941,8 +952,29 @@ def instructor_list(request):
     """Hiển thị danh sách huấn luyện viên"""
     instructors = Instructor.objects.all().order_by('full_name')
     
+    # Tìm kiếm
+    search_query = request.GET.get('q', '')
+    if search_query:
+        instructors = instructors.filter(
+            Q(full_name__icontains=search_query) | 
+            Q(email__icontains=search_query) | 
+            Q(phone__icontains=search_query) |
+            Q(specialties__icontains=search_query)
+        )
+    
+    # Phân trang
+    paginator = Paginator(instructors, 20)
+    page = request.GET.get('page')
+    try:
+        instructors = paginator.page(page)
+    except PageNotAnInteger:
+        instructors = paginator.page(1)
+    except EmptyPage:
+        instructors = paginator.page(paginator.num_pages)
+    
     context = {
         'instructors': instructors,
+        'search_query': search_query,
         'title': 'Danh sách huấn luyện viên'
     }
     
@@ -980,6 +1012,127 @@ def classtype_list(request):
     return render(request, 'dashboard/classtype_list.html', context)
 
 @login_required
+def classtype_form(request, pk=None):
+    """Form thêm mới hoặc chỉnh sửa loại lớp học"""
+    from branches.models import Branch
+    from classes.models import ClassType
+    
+    class_type = None
+    if pk:
+        # Chỉnh sửa loại lớp học hiện có
+        class_type = get_object_or_404(ClassType, pk=pk)
+        form_title = f"Chỉnh sửa loại lớp học: {class_type.name}"
+    else:
+        # Thêm mới loại lớp học
+        form_title = "Thêm loại lớp học mới"
+    
+    if request.method == 'POST':
+        # Xử lý form khi submit
+        name = request.POST.get('name')
+        branch_ids = request.POST.getlist('branches')
+        
+        # Lấy dữ liệu bảng giá từ form
+        class_formats = request.POST.getlist('class_format[]')
+        time_slots = request.POST.getlist('time_slot[]')
+        number_of_sessions = request.POST.getlist('number_of_sessions[]')
+        unit_prices = request.POST.getlist('unit_price[]')
+        
+        # Kiểm tra dữ liệu đầu vào
+        if not name or not branch_ids:
+            messages.error(request, "Vui lòng điền đầy đủ thông tin bắt buộc")
+            return redirect(request.path)
+        
+        try:
+            # Tạo hoặc cập nhật đối tượng ClassType
+            if class_type:
+                # Cập nhật thông tin cơ bản
+                class_type.name = name
+                class_type.save()
+                
+                # Cập nhật branches (many-to-many)
+                class_type.branches.clear()
+                class_type.branches.add(*branch_ids)
+                
+                # Xóa tất cả bảng giá cũ (nếu có)
+                if hasattr(class_type, 'prices'):
+                    class_type.prices.all().delete()
+                
+                messages.success(request, f"Đã cập nhật loại lớp học {name} thành công!")
+            else:
+                # Tạo mới
+                class_type = ClassType(
+                    name=name,
+                    class_category='regular',  # Giá trị mặc định
+                    duration=60,               # Giá trị mặc định
+                    max_capacity=10,           # Giá trị mặc định
+                    difficulty_level=3         # Giá trị mặc định
+                )
+                class_type.save()
+                
+                # Thêm branches (many-to-many)
+                class_type.branches.add(*branch_ids)
+                
+                messages.success(request, f"Đã tạo loại lớp học {name} thành công!")
+            
+            # Lưu thông tin bảng giá vào dữ liệu bổ sung hoặc model tương ứng
+            # Tạm thời lưu thông tin này vào trường khác nếu cần
+            # Trong tương lai có thể tạo model ClassPrice để lưu trữ thông tin này
+            
+            # Ghi log thông tin giá vào console để debug
+            for i in range(len(class_formats)):
+                if i < len(class_formats) and i < len(time_slots) and i < len(number_of_sessions) and i < len(unit_prices):
+                    try:
+                        sessions = int(number_of_sessions[i])
+                        unit_price = float(unit_prices[i])
+                        total_price = sessions * unit_price
+                        
+                        print(f"Thông tin giá: {class_formats[i]} - {time_slots[i]} - {sessions} buổi - {unit_price} VNĐ/buổi - {total_price} VNĐ tổng")
+                        
+                        # Khi đã có model ClassPrice, có thể tạo đối tượng ClassPrice ở đây
+                        # ClassPrice.objects.create(
+                        #     class_type=class_type,
+                        #     class_format=class_formats[i],
+                        #     time_slot=time_slots[i],
+                        #     number_of_sessions=sessions,
+                        #     unit_price=unit_price,
+                        #     total_price=total_price
+                        # )
+                    except (ValueError, TypeError) as e:
+                        print(f"Lỗi khi xử lý thông tin giá: {str(e)}")
+                        continue
+            
+            return redirect('dashboard:classtype_list')
+        
+        except Exception as e:
+            messages.error(request, f"Lỗi: {str(e)}")
+            return redirect(request.path)
+    
+    # Hiển thị form
+    context = {
+        'class_type': class_type,
+        'branches': Branch.objects.all(),
+        'class_category_choices': ClassType.CLASS_CATEGORY_CHOICES,
+        'title': form_title
+    }
+    
+    return render(request, 'dashboard/class_type_form.html', context)
+
+@login_required
+def classtype_delete(request, pk):
+    """Xóa loại lớp học"""
+    class_type = get_object_or_404(ClassType, pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            class_type_name = class_type.name
+            class_type.delete()
+            messages.success(request, f"Đã xóa loại lớp học {class_type_name} thành công!")
+        except Exception as e:
+            messages.error(request, f"Không thể xóa: {str(e)}")
+    
+    return redirect('dashboard:classtype_list')
+
+@login_required
 def branch_list(request):
     """Hiển thị danh sách chi nhánh"""
     branches = Branch.objects.all().order_by('name')
@@ -1006,6 +1159,109 @@ def branch_list(request):
     }
     
     return render(request, 'dashboard/branch_list.html', context)
+
+@login_required
+def branch_form(request, pk=None):
+    """Form thêm mới hoặc chỉnh sửa chi nhánh"""
+    branch = None
+    
+    if pk:
+        branch = get_object_or_404(Branch, pk=pk)
+    
+    if request.method == 'POST':
+        form_data = request.POST
+        image = request.FILES.get('image')
+        
+        if branch:
+            # Cập nhật chi nhánh
+            branch.name = form_data.get('name')
+            branch.address = form_data.get('address')
+            branch.phone_number = form_data.get('phone_number')
+            branch.google_map_url = form_data.get('google_map_url')
+            branch.description = form_data.get('description')
+            branch.active = form_data.get('active') == 'on'
+            
+            # Tiện ích - Chung
+            branch.has_elevator = form_data.get('has_elevator') == 'on'
+            branch.has_wifi = form_data.get('has_wifi') == 'on'
+            branch.has_lockers = form_data.get('has_lockers') == 'on'
+            branch.has_shower = form_data.get('has_shower') == 'on'
+            
+            # Tiện ích - Bãi đỗ xe và Di chuyển
+            branch.has_parking = form_data.get('has_parking') == 'on'
+            branch.has_bike_racks = form_data.get('has_bike_racks') == 'on'
+            branch.has_accessible_parking = form_data.get('has_accessible_parking') == 'on'
+            
+            # Tiện ích - Khác
+            branch.has_towel_service = form_data.get('has_towel_service') == 'on'
+            branch.has_food_drink = form_data.get('has_food_drink') == 'on'
+            branch.has_gender_neutral_restroom = form_data.get('has_gender_neutral_restroom') == 'on'
+            branch.has_childcare = form_data.get('has_childcare') == 'on'
+            
+            if image:
+                branch.image = image
+            
+            branch.save()
+            messages.success(request, 'Cập nhật chi nhánh thành công!')
+        else:
+            # Tạo chi nhánh mới
+            branch = Branch(
+                name=form_data.get('name'),
+                address=form_data.get('address'),
+                phone_number=form_data.get('phone_number'),
+                google_map_url=form_data.get('google_map_url'),
+                description=form_data.get('description'),
+                active=form_data.get('active') == 'on',
+                
+                # Tiện ích - Chung
+                has_elevator=form_data.get('has_elevator') == 'on',
+                has_wifi=form_data.get('has_wifi') == 'on',
+                has_lockers=form_data.get('has_lockers') == 'on',
+                has_shower=form_data.get('has_shower') == 'on',
+                
+                # Tiện ích - Bãi đỗ xe và Di chuyển
+                has_parking=form_data.get('has_parking') == 'on',
+                has_bike_racks=form_data.get('has_bike_racks') == 'on',
+                has_accessible_parking=form_data.get('has_accessible_parking') == 'on',
+                
+                # Tiện ích - Khác
+                has_towel_service=form_data.get('has_towel_service') == 'on',
+                has_food_drink=form_data.get('has_food_drink') == 'on',
+                has_gender_neutral_restroom=form_data.get('has_gender_neutral_restroom') == 'on',
+                has_childcare=form_data.get('has_childcare') == 'on',
+            )
+            
+            if image:
+                branch.image = image
+                
+            branch.save()
+            messages.success(request, 'Tạo chi nhánh mới thành công!')
+        
+        return redirect('dashboard:branch_list')
+    
+    context = {
+        'branch': branch,
+        'title': 'Chỉnh sửa chi nhánh' if branch else 'Thêm chi nhánh mới'
+    }
+    
+    return render(request, 'dashboard/branch_form.html', context)
+
+@login_required
+def branch_delete(request, pk):
+    """Xóa chi nhánh"""
+    branch = get_object_or_404(Branch, pk=pk)
+    
+    if request.method == 'POST':
+        branch.delete()
+        messages.success(request, f'Đã xóa chi nhánh "{branch.name}"')
+        return redirect('dashboard:branch_list')
+    
+    context = {
+        'branch': branch,
+        'title': 'Xác nhận xóa chi nhánh'
+    }
+    
+    return render(request, 'dashboard/branch_delete_confirm.html', context)
 
 @login_required
 def user_list(request):
@@ -1128,3 +1384,117 @@ def search_customers(request):
     print(f"Kết quả trả về: {results}")
     
     return JsonResponse({'results': results})
+
+@login_required
+def instructor_form(request, pk=None):
+    """Form thêm mới hoặc chỉnh sửa huấn luyện viên"""
+    instructor = None
+    
+    if pk:
+        instructor = get_object_or_404(Instructor, pk=pk)
+    
+    if request.method == 'POST':
+        form_data = request.POST
+        profile_image = request.FILES.get('profile_image')
+        
+        if instructor:
+            # Cập nhật huấn luyện viên
+            instructor.full_name = form_data.get('full_name')
+            instructor.email = form_data.get('email')
+            instructor.phone = form_data.get('phone')
+            instructor.address = form_data.get('address')
+            instructor.bio = form_data.get('bio')
+            instructor.certifications = form_data.get('certifications')
+            instructor.specialties = form_data.get('specialties')
+            instructor.gender = form_data.get('gender')
+            instructor.active = form_data.get('active') == 'on'
+            
+            # Xử lý các trường ngày tháng
+            try:
+                if form_data.get('date_of_birth'):
+                    instructor.date_of_birth = datetime.strptime(form_data.get('date_of_birth'), '%Y-%m-%d').date()
+                if form_data.get('hire_date'):
+                    instructor.hire_date = datetime.strptime(form_data.get('hire_date'), '%Y-%m-%d').date()
+            except ValueError:
+                pass
+            
+            # Xử lý trường số
+            try:
+                instructor.weekday_hourly_rate = float(form_data.get('weekday_hourly_rate', 0))
+                instructor.sunday_hourly_rate = float(form_data.get('sunday_hourly_rate', 0))
+            except ValueError:
+                pass
+            
+            # Xử lý hình ảnh
+            if profile_image:
+                instructor.profile_image = profile_image
+            
+            instructor.save()
+            messages.success(request, 'Cập nhật huấn luyện viên thành công!')
+        else:
+            # Tạo huấn luyện viên mới
+            try:
+                instructor = Instructor(
+                    full_name=form_data.get('full_name'),
+                    email=form_data.get('email'),
+                    phone=form_data.get('phone'),
+                    address=form_data.get('address'),
+                    bio=form_data.get('bio'),
+                    certifications=form_data.get('certifications'),
+                    specialties=form_data.get('specialties'),
+                    gender=form_data.get('gender'),
+                    active=form_data.get('active') == 'on'
+                )
+                
+                # Xử lý các trường ngày tháng
+                if form_data.get('date_of_birth'):
+                    instructor.date_of_birth = datetime.strptime(form_data.get('date_of_birth'), '%Y-%m-%d').date()
+                if form_data.get('hire_date'):
+                    instructor.hire_date = datetime.strptime(form_data.get('hire_date'), '%Y-%m-%d').date()
+                else:
+                    instructor.hire_date = datetime.now().date()
+                
+                # Xử lý trường số
+                instructor.weekday_hourly_rate = float(form_data.get('weekday_hourly_rate', 0))
+                instructor.sunday_hourly_rate = float(form_data.get('sunday_hourly_rate', 0))
+                
+                # Xử lý hình ảnh
+                if profile_image:
+                    instructor.profile_image = profile_image
+                
+                instructor.save()
+                messages.success(request, 'Tạo huấn luyện viên mới thành công!')
+            except Exception as e:
+                messages.error(request, f'Lỗi khi tạo huấn luyện viên: {str(e)}')
+                return render(request, 'dashboard/instructor_form.html', {
+                    'instructor': None,
+                    'title': 'Thêm huấn luyện viên mới',
+                    'error': str(e)
+                })
+        
+        return redirect('dashboard:instructor_list')
+    
+    context = {
+        'instructor': instructor,
+        'title': 'Chỉnh sửa huấn luyện viên' if instructor else 'Thêm huấn luyện viên mới',
+        'gender_choices': Instructor.GENDER_CHOICES,
+    }
+    
+    return render(request, 'dashboard/instructor_form.html', context)
+
+@login_required
+def instructor_delete(request, pk):
+    """Xóa huấn luyện viên"""
+    instructor = get_object_or_404(Instructor, pk=pk)
+    
+    if request.method == 'POST':
+        instructor.delete()
+        messages.success(request, f'Đã xóa huấn luyện viên "{instructor.full_name}"')
+        return redirect('dashboard:instructor_list')
+    
+    context = {
+        'instructor': instructor,
+        'title': 'Xác nhận xóa huấn luyện viên'
+    }
+    
+    return render(request, 'dashboard/instructor_delete_confirm.html', context)

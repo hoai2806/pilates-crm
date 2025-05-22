@@ -1,0 +1,370 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Giảm kích thước font chữ */
+    .card-header h4 {
+        font-size: 1.1rem !important;
+    }
+    
+    .form-label {
+        font-size: 0.875rem;
+    }
+    
+    .form-control, .form-select {
+        font-size: 0.875rem;
+    }
+    
+    .btn {
+        font-size: 0.875rem;
+    }
+    
+    .required:after {
+        content: " *";
+        color: red;
+    }
+    
+    .class-price-item {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-left: 3px solid #6c757d;
+    }
+    
+    .remove-price-btn {
+        color: #dc3545;
+        cursor: pointer;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:main_dashboard' %}">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:classtype_list' %}">Loại lớp học</a></li>
+                    <li class="breadcrumb-item active">{{ title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="m-0">{{ title }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2">Thông tin cơ bản</h5>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="name" class="form-label required">Tên loại lớp</label>
+                            <input type="text" id="name" name="name" class="form-control" 
+                                value="{{ class_type.name|default:'' }}" required>
+                            <div class="invalid-feedback">
+                                Vui lòng nhập tên loại lớp
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="branches" class="form-label required">Chi nhánh áp dụng</label>
+                            <div class="border rounded p-3" style="max-height: 150px; overflow-y: auto;">
+                                {% for branch in branches %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="branches" 
+                                           id="branch_{{ branch.id }}" value="{{ branch.id }}"
+                                           {% if branch in class_type.branches.all %}checked{% endif %}>
+                                    <label class="form-check-label" for="branch_{{ branch.id }}">
+                                        {{ branch.name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="invalid-feedback">
+                                Vui lòng chọn ít nhất một chi nhánh
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2">Bảng giá</h5>
+                    </div>
+                </div>
+                
+                <!-- Container cho các mục giá -->
+                <div id="price-items-container">
+                    {% if class_type and class_type.prices.all %}
+                        {% for price in class_type.prices.all %}
+                        <div class="class-price-item" data-item-id="{{ forloop.counter }}">
+                            <div class="row">
+                                <div class="col-11">
+                                    <div class="row mb-2">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="form-label required">Hình thức lớp</label>
+                                                <select name="class_format[]" class="form-select" required>
+                                                    <option value="PT" {% if price.class_format == 'PT' %}selected{% endif %}>PT 1:1</option>
+                                                    <option value="GROUP_2" {% if price.class_format == 'GROUP_2' %}selected{% endif %}>Nhóm 1:2</option>
+                                                    <option value="GROUP_3" {% if price.class_format == 'GROUP_3' %}selected{% endif %}>Nhóm 1:3</option>
+                                                    <option value="GROUP_6" {% if price.class_format == 'GROUP_6' %}selected{% endif %}>Nhóm 1:6</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="form-label required">Khung giờ</label>
+                                                <select name="time_slot[]" class="form-select" required>
+                                                    <option value="ALL" {% if price.time_slot == 'ALL' %}selected{% endif %}>Tất cả khung giờ</option>
+                                                    <option value="MORNING_LOW" {% if price.time_slot == 'MORNING_LOW' %}selected{% endif %}>Thấp điểm sáng</option>
+                                                    <option value="MORNING_MID" {% if price.time_slot == 'MORNING_MID' %}selected{% endif %}>Trung điểm sáng</option>
+                                                    <option value="MORNING_PEAK" {% if price.time_slot == 'MORNING_PEAK' %}selected{% endif %}>Cao điểm sáng</option>
+                                                    <option value="AFTERNOON_LOW" {% if price.time_slot == 'AFTERNOON_LOW' %}selected{% endif %}>Thấp điểm chiều</option>
+                                                    <option value="AFTERNOON_MID" {% if price.time_slot == 'AFTERNOON_MID' %}selected{% endif %}>Trung điểm chiều</option>
+                                                    <option value="AFTERNOON_PEAK" {% if price.time_slot == 'AFTERNOON_PEAK' %}selected{% endif %}>Cao điểm chiều</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="form-label required">Số buổi</label>
+                                                <input type="number" name="number_of_sessions[]" class="form-control sessions-input" 
+                                                    value="{{ price.number_of_sessions }}" min="1" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="form-label required">Đơn giá (VNĐ/buổi)</label>
+                                                <input type="number" name="unit_price[]" class="form-control price-input" 
+                                                    value="{{ price.unit_price }}" min="0" step="1000" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="form-label">Thành tiền (VNĐ)</label>
+                                                <input type="text" name="total_price[]" class="form-control total-price" 
+                                                    value="{{ price.total_price }}" readonly>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-1 d-flex align-items-center justify-content-center">
+                                    <a class="remove-price-btn" onclick="removePrice(this)">
+                                        <i class="fas fa-trash fa-lg"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <button type="button" class="btn btn-outline-primary" id="add-price-btn">
+                            <i class="fas fa-plus"></i> Thêm bảng giá
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Lưu thông tin
+                        </button>
+                        <a href="{% url 'dashboard:classtype_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Hủy
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Thêm script trực tiếp trong phần nội dung để đảm bảo thứ tự thực thi đúng -->
+<script>
+    // Xóa mục bảng giá
+    function removePrice(element) {
+        const item = element.closest('.class-price-item');
+        item.remove();
+    }
+    
+    // Tạo mục bảng giá mới
+    function addNewPriceItem() {
+        console.log("addNewPriceItem called");
+        const container = document.getElementById('price-items-container');
+        console.log("Container:", container);
+        
+        if (!container) {
+            console.error("Container not found!");
+            return;
+        }
+        
+        const itemId = container.children.length + 1;
+        console.log("Creating new item with ID:", itemId);
+        
+        const newItem = document.createElement('div');
+        newItem.className = 'class-price-item';
+        newItem.dataset.itemId = itemId;
+        
+        newItem.innerHTML = `
+            <div class="row">
+                <div class="col-11">
+                    <div class="row mb-2">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label required">Hình thức lớp</label>
+                                <select name="class_format[]" class="form-select" required>
+                                    <option value="PT">PT 1:1</option>
+                                    <option value="GROUP_2">Nhóm 1:2</option>
+                                    <option value="GROUP_3">Nhóm 1:3</option>
+                                    <option value="GROUP_6">Nhóm 1:6</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label required">Khung giờ</label>
+                                <select name="time_slot[]" class="form-select" required>
+                                    <option value="ALL">Tất cả khung giờ</option>
+                                    <option value="MORNING_LOW">Thấp điểm sáng</option>
+                                    <option value="MORNING_MID">Trung điểm sáng</option>
+                                    <option value="MORNING_PEAK">Cao điểm sáng</option>
+                                    <option value="AFTERNOON_LOW">Thấp điểm chiều</option>
+                                    <option value="AFTERNOON_MID">Trung điểm chiều</option>
+                                    <option value="AFTERNOON_PEAK">Cao điểm chiều</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label required">Số buổi</label>
+                                <input type="number" name="number_of_sessions[]" class="form-control sessions-input" 
+                                    value="10" min="1" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label required">Đơn giá (VNĐ/buổi)</label>
+                                <input type="number" name="unit_price[]" class="form-control price-input" 
+                                    value="300000" min="0" step="1000" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Thành tiền (VNĐ)</label>
+                                <input type="text" name="total_price[]" class="form-control total-price" 
+                                    value="3000000" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-1 d-flex align-items-center justify-content-center">
+                    <a class="remove-price-btn" onclick="removePrice(this)">
+                        <i class="fas fa-trash fa-lg"></i>
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(newItem);
+        updateTotalPrice(newItem);
+    }
+    
+    // Đảm bảo DOM đã tải xong trước khi thực thi mã JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM fully loaded");
+        
+        // Đăng ký sự kiện click cho nút thêm bảng giá
+        document.getElementById('add-price-btn').addEventListener('click', function() {
+            console.log("Button clicked");
+            addNewPriceItem();
+        });
+        
+        // Tính tổng tiền khi thay đổi đơn giá hoặc số buổi
+        document.addEventListener('input', function(event) {
+            if (event.target.classList.contains('price-input') || event.target.classList.contains('sessions-input')) {
+                const item = event.target.closest('.class-price-item');
+                updateTotalPrice(item);
+            }
+        });
+        
+        // Cập nhật tất cả thành tiền
+        updateAllTotalPrices();
+        
+        // Tự động thêm mục nếu không có
+        const priceItems = document.querySelectorAll('.class-price-item');
+        console.log("Initial number of price items:", priceItems.length);
+        if (priceItems.length === 0) {
+            console.log("Auto-adding first price item");
+            addNewPriceItem();
+        }
+    });
+    
+    // Form validation
+    (function() {
+        'use strict';
+        
+        const forms = document.querySelectorAll('.needs-validation');
+        
+        Array.from(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+    
+    // Cập nhật thành tiền
+    function updateTotalPrice(item) {
+        const priceInput = item.querySelector('.price-input');
+        const sessionsInput = item.querySelector('.sessions-input');
+        const totalPriceInput = item.querySelector('.total-price');
+        
+        if (priceInput && sessionsInput && totalPriceInput) {
+            const price = parseFloat(priceInput.value) || 0;
+            const sessions = parseInt(sessionsInput.value) || 0;
+            const total = price * sessions;
+            
+            totalPriceInput.value = total.toLocaleString('vi-VN');
+        }
+    }
+    
+    // Cập nhật tất cả thành tiền
+    function updateAllTotalPrices() {
+        const items = document.querySelectorAll('.class-price-item');
+        items.forEach(item => {
+            updateTotalPrice(item);
+        });
+    }
+</script>
+{% endblock %}
+
+{% block scripts %}
+<!-- Các script phụ có thể được đặt ở đây nếu cần -->
+{% endblock %} 

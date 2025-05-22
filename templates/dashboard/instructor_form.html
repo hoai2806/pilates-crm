@@ -1,0 +1,233 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Giảm kích thước font chữ */
+    .card-header h4 {
+        font-size: 1.1rem !important;
+    }
+    
+    .form-label {
+        font-size: 0.875rem;
+    }
+    
+    .form-control, .form-select {
+        font-size: 0.875rem;
+    }
+    
+    .btn {
+        font-size: 0.875rem;
+    }
+    
+    .required:after {
+        content: " *";
+        color: red;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:main_dashboard' %}">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:instructor_list' %}">Huấn luyện viên</a></li>
+                    <li class="breadcrumb-item active">{{ title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="m-0">{{ title }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2">Thông tin cơ bản</h5>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="full_name" class="form-label required">Họ và tên</label>
+                            <input type="text" id="full_name" name="full_name" class="form-control" 
+                                value="{{ instructor.full_name|default:'' }}" required>
+                            <div class="invalid-feedback">
+                                Vui lòng nhập họ và tên
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" id="email" name="email" value="hlv{{ instructor.id|default:'new' }}@pilates.vn">
+                        
+                        <div class="form-group mb-3">
+                            <label for="phone" class="form-label required">Số điện thoại</label>
+                            <input type="text" id="phone" name="phone" class="form-control" 
+                                value="{{ instructor.phone|default:'' }}" required>
+                            <div class="invalid-feedback">
+                                Vui lòng nhập số điện thoại
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="gender" class="form-label required">Giới tính</label>
+                            <select id="gender" name="gender" class="form-select" required>
+                                {% for value, text in gender_choices %}
+                                    <option value="{{ value }}" {% if instructor.gender == value %}selected{% endif %}>{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Vui lòng chọn giới tính
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="date_of_birth" class="form-label">Ngày sinh</label>
+                            <input type="date" id="date_of_birth" name="date_of_birth" class="form-control" 
+                                value="{{ instructor.date_of_birth|date:'Y-m-d'|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="address" class="form-label">Địa chỉ</label>
+                            <textarea id="address" name="address" class="form-control" 
+                                rows="3">{{ instructor.address|default:'' }}</textarea>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="hire_date" class="form-label required">Ngày tuyển dụng</label>
+                            <input type="date" id="hire_date" name="hire_date" class="form-control" 
+                                value="{{ instructor.hire_date|date:'Y-m-d'|default:'' }}" required>
+                            <div class="invalid-feedback">
+                                Vui lòng chọn ngày tuyển dụng
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="profile_image" class="form-label">Ảnh đại diện</label>
+                            <input type="file" id="profile_image" name="profile_image" class="form-control" accept="image/*">
+                            {% if instructor.profile_image %}
+                            <div class="mt-2">
+                                <img src="{{ instructor.profile_image.url }}" alt="{{ instructor.full_name }}" class="img-thumbnail" style="max-height: 150px;">
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" role="switch" id="active" name="active" 
+                                {% if instructor.active|default:True %}checked{% endif %}>
+                            <label class="form-check-label" for="active">Đang làm việc</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2">Chuyên môn & Lương</h5>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="specialties" class="form-label">Chuyên môn</label>
+                            <input type="text" id="specialties" name="specialties" class="form-control" 
+                                value="{{ instructor.specialties|default:'' }}" placeholder="VD: Yoga, Pilates, Fitness">
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="certifications" class="form-label">Chứng chỉ</label>
+                            <textarea id="certifications" name="certifications" class="form-control" 
+                                rows="3" placeholder="Liệt kê các chứng chỉ đã có">{{ instructor.certifications|default:'' }}</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="weekday_hourly_rate" class="form-label required">Mức lương theo giờ (Thứ 2-7)</label>
+                            <div class="input-group">
+                                <input type="number" id="weekday_hourly_rate" name="weekday_hourly_rate" class="form-control" 
+                                    value="{{ instructor.weekday_hourly_rate|default:0 }}" min="0" step="1000" required>
+                                <span class="input-group-text">VNĐ</span>
+                            </div>
+                            <div class="invalid-feedback">
+                                Vui lòng nhập mức lương
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="sunday_hourly_rate" class="form-label required">Mức lương theo giờ (Chủ nhật)</label>
+                            <div class="input-group">
+                                <input type="number" id="sunday_hourly_rate" name="sunday_hourly_rate" class="form-control" 
+                                    value="{{ instructor.sunday_hourly_rate|default:0 }}" min="0" step="1000" required>
+                                <span class="input-group-text">VNĐ</span>
+                            </div>
+                            <div class="invalid-feedback">
+                                Vui lòng nhập mức lương
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2">Thông tin thêm</h5>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label for="bio" class="form-label">Tiểu sử</label>
+                            <textarea id="bio" name="bio" class="form-control" 
+                                rows="5" placeholder="Thông tin tiểu sử, giới thiệu về huấn luyện viên...">{{ instructor.bio|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Lưu thông tin
+                        </button>
+                        <a href="{% url 'dashboard:instructor_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Hủy
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Form validation
+    (function() {
+        'use strict';
+        
+        const forms = document.querySelectorAll('.needs-validation');
+        
+        Array.from(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+</script>
+{% endblock %} 
