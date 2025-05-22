@@ -57,10 +57,15 @@ def customer_dashboard(request):
     this_year_start = today.replace(month=1, day=1)
     
     # Tính toán các số liệu tổng hợp
-    total_customers = Customer.objects.count()
-    active_customers = Customer.objects.filter(active=True).count()
-    purchased_count = Customer.objects.filter(status__in=['purchased', 'repurchased']).count()
-    new_customers_this_month = Customer.objects.filter(registration_date__gte=this_month_start).count()
+    total_customers = Customer.objects.filter(**filter_params).count()
+    active_customers = Customer.objects.filter(active=True, **filter_params).count()
+    purchased_count = Customer.objects.filter(status__in=['purchased', 'repurchased'], **filter_params).count()
+    
+    # Nếu áp dụng filter, thì lọc theo khoảng thời gian đó, không phải chỉ tháng này
+    if 'registration_date__range' in filter_params:
+        new_customers_this_month = total_customers
+    else:
+        new_customers_this_month = Customer.objects.filter(registration_date__gte=this_month_start).count()
     
     context = {
         'total_customers': total_customers,
