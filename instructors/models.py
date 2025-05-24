@@ -10,7 +10,6 @@ class Instructor(models.Model):
     )
     
     full_name = models.CharField(max_length=100, verbose_name="Họ và tên")
-    email = models.EmailField(unique=True, verbose_name="Email")
     phone = models.CharField(max_length=15, verbose_name="Số điện thoại")
     address = models.TextField(blank=True, null=True, verbose_name="Địa chỉ")
     date_of_birth = models.DateField(blank=True, null=True, verbose_name="Ngày sinh")
@@ -20,8 +19,8 @@ class Instructor(models.Model):
     specialties = models.CharField(max_length=255, blank=True, null=True, verbose_name="Chuyên môn")
     profile_image = models.ImageField(upload_to='instructors/', blank=True, null=True, verbose_name="Ảnh đại diện")
     hire_date = models.DateField(verbose_name="Ngày thuê")
-    weekday_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Mức lương theo giờ (Thứ 2-7)")
-    sunday_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Mức lương theo giờ (Chủ nhật)")
+    weekday_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Mức lương theo giờ (Thứ 2-7)", blank=True, null=True)
+    sunday_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Mức lương theo giờ (Chủ nhật)", blank=True, null=True)
     active = models.BooleanField(default=True, verbose_name="Đang làm việc")
     
     class Meta:

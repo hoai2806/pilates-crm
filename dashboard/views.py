@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .forms import ClassScheduleForm
 from customers.models import Customer, CustomerPackage, HealthDocument
-from classes.models import ClassType, ClassSchedule, Attendance
+from classes.models import ClassType, ClassSchedule, Attendance, ClassTypePrice
 from instructors.models import Instructor
 from branches.models import Branch
 from payments.models import Payment
@@ -957,8 +957,7 @@ def instructor_list(request):
     if search_query:
         instructors = instructors.filter(
             Q(full_name__icontains=search_query) | 
-            Q(email__icontains=search_query) | 
-            Q(phone__icontains=search_query) |
+            Q(phone__icontains=search_query) | 
             Q(specialties__icontains=search_query)
         )
     
@@ -984,7 +983,6 @@ def instructor_list(request):
 def classtype_list(request):
     """Hiển thị danh sách các loại lớp học"""
     class_types = ClassType.objects.all().order_by('name')
-    
     # Tìm kiếm
     search_query = request.GET.get('q', '')
     if search_query:
@@ -992,7 +990,6 @@ def classtype_list(request):
             Q(name__icontains=search_query) | 
             Q(description__icontains=search_query)
         )
-    
     # Phân trang
     paginator = Paginator(class_types, 20)  # 20 loại lớp học mỗi trang
     page = request.GET.get('page')
@@ -1002,20 +999,31 @@ def classtype_list(request):
         class_types = paginator.page(1)
     except EmptyPage:
         class_types = paginator.page(paginator.num_pages)
-    
+    # Xử lý lấy danh sách class_format duy nhất cho từng class_type
+    unique_formats = {}
+    for ct in class_types:
+        formats = list(ct.prices.values_list('class_format', flat=True))
+        # Loại bỏ trùng lặp và giữ thứ tự
+        seen = set()
+        unique = []
+        for f in formats:
+            if f not in seen:
+                unique.append(f)
+                seen.add(f)
+        unique_formats[ct.id] = unique
     context = {
         'class_types': class_types,
         'search_query': search_query,
-        'title': 'Danh sách loại lớp học'
+        'title': 'Danh sách loại lớp học',
+        'unique_formats': unique_formats,
     }
-    
     return render(request, 'dashboard/classtype_list.html', context)
 
 @login_required
 def classtype_form(request, pk=None):
     """Form thêm mới hoặc chỉnh sửa loại lớp học"""
     from branches.models import Branch
-    from classes.models import ClassType
+    from classes.models import ClassType, ClassTypePrice
     
     class_type = None
     if pk:
@@ -1074,32 +1082,17 @@ def classtype_form(request, pk=None):
                 
                 messages.success(request, f"Đã tạo loại lớp học {name} thành công!")
             
-            # Lưu thông tin bảng giá vào dữ liệu bổ sung hoặc model tương ứng
-            # Tạm thời lưu thông tin này vào trường khác nếu cần
-            # Trong tương lai có thể tạo model ClassPrice để lưu trữ thông tin này
-            
-            # Ghi log thông tin giá vào console để debug
+            # Tạo các bảng giá mới với thứ tự
             for i in range(len(class_formats)):
-                if i < len(class_formats) and i < len(time_slots) and i < len(number_of_sessions) and i < len(unit_prices):
-                    try:
-                        sessions = int(number_of_sessions[i])
-                        unit_price = float(unit_prices[i])
-                        total_price = sessions * unit_price
-                        
-                        print(f"Thông tin giá: {class_formats[i]} - {time_slots[i]} - {sessions} buổi - {unit_price} VNĐ/buổi - {total_price} VNĐ tổng")
-                        
-                        # Khi đã có model ClassPrice, có thể tạo đối tượng ClassPrice ở đây
-                        # ClassPrice.objects.create(
-                        #     class_type=class_type,
-                        #     class_format=class_formats[i],
-                        #     time_slot=time_slots[i],
-                        #     number_of_sessions=sessions,
-                        #     unit_price=unit_price,
-                        #     total_price=total_price
-                        # )
-                    except (ValueError, TypeError) as e:
-                        print(f"Lỗi khi xử lý thông tin giá: {str(e)}")
-                        continue
+                if class_formats[i] and time_slots[i] and number_of_sessions[i] and unit_prices[i]:
+                    ClassTypePrice.objects.create(
+                        class_type=class_type,
+                        class_format=class_formats[i],
+                        time_slot=time_slots[i],
+                        number_of_sessions=int(number_of_sessions[i]),
+                        unit_price=float(unit_prices[i]),
+                        order=i  # Thêm thứ tự theo index
+                    )
             
             return redirect('dashboard:classtype_list')
         
@@ -1131,6 +1124,49 @@ def classtype_delete(request, pk):
             messages.error(request, f"Không thể xóa: {str(e)}")
     
     return redirect('dashboard:classtype_list')
+
+@login_required
+def classtype_duplicate(request, pk):
+    """Nhân đôi loại lớp học"""
+    original_class_type = get_object_or_404(ClassType, pk=pk)
+    
+    try:
+        # Tạo bản sao của loại lớp học
+        new_class_type = ClassType.objects.create(
+            name=f"{original_class_type.name} (Bản sao)",
+            class_category=original_class_type.class_category,
+            duration=original_class_type.duration,
+            max_capacity=original_class_type.max_capacity,
+            difficulty_level=original_class_type.difficulty_level
+        )
+        
+        # Sao chép các chi nhánh
+        new_class_type.branches.set(original_class_type.branches.all())
+        
+        # Sao chép bảng giá với thứ tự mới
+        for i, price in enumerate(original_class_type.prices.all().order_by('order')):
+            # Chuyển đổi class_format cũ sang mới
+            new_class_format = price.class_format
+            if price.class_format == 'pt_1_1':
+                new_class_format = 'PT'
+            elif price.class_format == 'group_1_3':
+                new_class_format = 'GROUP_3'
+            
+            ClassTypePrice.objects.create(
+                class_type=new_class_type,
+                class_format=new_class_format,
+                time_slot=price.time_slot,
+                number_of_sessions=price.number_of_sessions,
+                unit_price=price.unit_price,
+                order=i  # Thêm thứ tự mới
+            )
+        
+        messages.success(request, f"Đã nhân đôi loại lớp học {original_class_type.name} thành công!")
+        return redirect('dashboard:classtype_edit', pk=new_class_type.id)
+        
+    except Exception as e:
+        messages.error(request, f"Lỗi khi nhân đôi loại lớp học: {str(e)}")
+        return redirect('dashboard:classtype_list')
 
 @login_required
 def branch_list(request):
@@ -1400,7 +1436,6 @@ def instructor_form(request, pk=None):
         if instructor:
             # Cập nhật huấn luyện viên
             instructor.full_name = form_data.get('full_name')
-            instructor.email = form_data.get('email')
             instructor.phone = form_data.get('phone')
             instructor.address = form_data.get('address')
             instructor.bio = form_data.get('bio')
@@ -1408,7 +1443,6 @@ def instructor_form(request, pk=None):
             instructor.specialties = form_data.get('specialties')
             instructor.gender = form_data.get('gender')
             instructor.active = form_data.get('active') == 'on'
-            
             # Xử lý các trường ngày tháng
             try:
                 if form_data.get('date_of_birth'):
@@ -1417,18 +1451,9 @@ def instructor_form(request, pk=None):
                     instructor.hire_date = datetime.strptime(form_data.get('hire_date'), '%Y-%m-%d').date()
             except ValueError:
                 pass
-            
-            # Xử lý trường số
-            try:
-                instructor.weekday_hourly_rate = float(form_data.get('weekday_hourly_rate', 0))
-                instructor.sunday_hourly_rate = float(form_data.get('sunday_hourly_rate', 0))
-            except ValueError:
-                pass
-            
             # Xử lý hình ảnh
             if profile_image:
                 instructor.profile_image = profile_image
-            
             instructor.save()
             messages.success(request, 'Cập nhật huấn luyện viên thành công!')
         else:
@@ -1436,7 +1461,6 @@ def instructor_form(request, pk=None):
             try:
                 instructor = Instructor(
                     full_name=form_data.get('full_name'),
-                    email=form_data.get('email'),
                     phone=form_data.get('phone'),
                     address=form_data.get('address'),
                     bio=form_data.get('bio'),
@@ -1445,7 +1469,6 @@ def instructor_form(request, pk=None):
                     gender=form_data.get('gender'),
                     active=form_data.get('active') == 'on'
                 )
-                
                 # Xử lý các trường ngày tháng
                 if form_data.get('date_of_birth'):
                     instructor.date_of_birth = datetime.strptime(form_data.get('date_of_birth'), '%Y-%m-%d').date()
@@ -1453,15 +1476,9 @@ def instructor_form(request, pk=None):
                     instructor.hire_date = datetime.strptime(form_data.get('hire_date'), '%Y-%m-%d').date()
                 else:
                     instructor.hire_date = datetime.now().date()
-                
-                # Xử lý trường số
-                instructor.weekday_hourly_rate = float(form_data.get('weekday_hourly_rate', 0))
-                instructor.sunday_hourly_rate = float(form_data.get('sunday_hourly_rate', 0))
-                
                 # Xử lý hình ảnh
                 if profile_image:
                     instructor.profile_image = profile_image
-                
                 instructor.save()
                 messages.success(request, 'Tạo huấn luyện viên mới thành công!')
             except Exception as e:

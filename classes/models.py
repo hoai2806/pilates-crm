@@ -38,14 +38,31 @@ class ClassType(models.Model):
 
 class ClassTypePrice(models.Model):
     CLASS_FORMAT_CHOICES = (
-        ('pt_1_1', 'PT 1-1'),
-        ('group_1_3', 'Nhóm 1-3'),
+        ('PT', 'PT 1:1'),
+        ('GROUP_2', 'Nhóm 1:2'),
+        ('GROUP_3', 'Nhóm 1:3'),
+        ('GROUP_6', 'Nhóm 1:6'),
     )
     
     class_type = models.ForeignKey(ClassType, on_delete=models.CASCADE, related_name="prices", verbose_name="Loại lớp")
     class_format = models.CharField(max_length=20, choices=CLASS_FORMAT_CHOICES, verbose_name="Hình thức lớp")
+    time_slot = models.CharField(
+        max_length=20,
+        choices=[
+            ('ALL', 'Tất cả khung giờ'),
+            ('MORNING_LOW', 'Thấp điểm sáng'),
+            ('MORNING_MID', 'Trung điểm sáng'),
+            ('MORNING_PEAK', 'Cao điểm sáng'),
+            ('AFTERNOON_LOW', 'Thấp điểm chiều'),
+            ('AFTERNOON_MID', 'Trung điểm chiều'),
+            ('AFTERNOON_PEAK', 'Cao điểm chiều'),
+        ],
+        default='ALL',
+        verbose_name='Khung giờ',
+    )
     number_of_sessions = models.PositiveIntegerField(verbose_name="Số buổi")
     unit_price = models.DecimalField(max_digits=10, decimal_places=0, verbose_name="Đơn giá")
+    order = models.PositiveIntegerField(default=0)
     
     @property
     def total_price(self):
@@ -54,8 +71,8 @@ class ClassTypePrice(models.Model):
     class Meta:
         verbose_name = "Bảng giá lớp học"
         verbose_name_plural = "Bảng giá lớp học"
-        ordering = ['class_format', 'number_of_sessions']
-        unique_together = ['class_type', 'class_format', 'number_of_sessions']
+        ordering = ['order', 'class_format', 'number_of_sessions']
+        unique_together = ['class_type', 'class_format', 'time_slot', 'number_of_sessions']
     
     def __str__(self):
         return f"{self.get_class_format_display()} - {self.number_of_sessions} buổi"
@@ -266,3 +283,9 @@ class Attendance(models.Model):
                     self.is_session_deducted = True
         
         super().save(*args, **kwargs)
+
+# booking_deadline_days = models.PositiveIntegerField(default=1, verbose_name="Hạn chót đặt lịch (ngày)")
+
+# ct = ClassType.objects.get(id=20)  # Bàn chân bẹt - Nhóm 1:6 - X-Pilates
+
+# @receiver(post_save, sender=ClassTypePrice)

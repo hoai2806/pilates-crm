@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'rest_framework',
     'mathfilters',  # Thêm mathfilters để hỗ trợ các phép tính trong template
+    'crm',  # Thêm dòng này để Django nhận templatetags custom
     'customers',
     'classes',
     'instructors',

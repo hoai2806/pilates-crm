@@ -37,10 +37,8 @@
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Tên loại lớp</th>
-                            <th scope="col">Loại</th>
                             <th scope="col">Thời lượng</th>
-                            <th scope="col">Sức chứa</th>
-                            <th scope="col">Mức độ khó</th>
+                            <th scope="col">Loại hình thức tập</th>
                             <th scope="col">Chi nhánh</th>
                             <th scope="col">Thao tác</th>
                         </tr>
@@ -50,10 +48,14 @@
                             <tr>
                                 <td>{{ forloop.counter }}</td>
                                 <td>{{ class_type.name }}</td>
-                                <td>{{ class_type.get_class_category_display }}</td>
                                 <td>{{ class_type.duration }} phút</td>
-                                <td>{{ class_type.max_capacity }} người</td>
-                                <td>{{ class_type.difficulty_level }}</td>
+                                <td style="font-size: 13px;">
+                                    {% for fmt in unique_formats.class_type.id %}
+                                        {% if fmt == 'pt_1_1' or fmt == 'pt' %}PT{% elif fmt == 'group_1_3' %}Nhóm{% else %}{{ fmt }}{% endif %}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                        <span class="text-muted">Chưa có</span>
+                                    {% endfor %}
+                                </td>
                                 <td>
                                     {% for branch in class_type.branches.all %}
                                         {{ branch.name }}{% if not forloop.last %}, {% endif %}
@@ -62,6 +64,9 @@
                                 <td>
                                     <a href="{% url 'dashboard:classtype_edit' class_type.id %}" class="btn btn-sm btn-success">
                                         <i class="fas fa-edit"></i> Sửa
+                                    </a>
+                                    <a href="{% url 'dashboard:classtype_duplicate' class_type.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-copy"></i> Nhân đôi
                                     </a>
                                     <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ class_type.id }}">
                                         <i class="fas fa-trash"></i> Xóa
@@ -93,7 +98,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="8" class="text-center">Không có dữ liệu</td>
+                                <td colspan="6" class="text-center">Không có dữ liệu</td>
                             </tr>
                         {% endfor %}
                     </tbody>

@@ -116,7 +116,7 @@
                             <div class="row">
                                 <div class="col-11">
                                     <div class="row mb-2">
-                                        <div class="col-md-4">
+                                        <div class="col-md-3">
                                             <div class="form-group">
                                                 <label class="form-label required">Hình thức lớp</label>
                                                 <select name="class_format[]" class="form-select" required>
@@ -127,7 +127,7 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-3">
                                             <div class="form-group">
                                                 <label class="form-label required">Khung giờ</label>
                                                 <select name="time_slot[]" class="form-select" required>
@@ -141,22 +141,22 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-3">
                                             <div class="form-group">
                                                 <label class="form-label required">Số buổi</label>
                                                 <input type="number" name="number_of_sessions[]" class="form-control sessions-input" 
                                                     value="{{ price.number_of_sessions }}" min="1" required>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-3">
                                             <div class="form-group">
                                                 <label class="form-label required">Đơn giá (VNĐ/buổi)</label>
                                                 <input type="number" name="unit_price[]" class="form-control price-input" 
                                                     value="{{ price.unit_price }}" min="0" step="1000" required>
                                             </div>
                                         </div>
+                                    </div>
+                                    <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label class="form-label">Thành tiền (VNĐ)</label>
@@ -210,135 +210,25 @@
     
     // Tạo mục bảng giá mới
     function addNewPriceItem() {
-        console.log("addNewPriceItem called");
         const container = document.getElementById('price-items-container');
-        console.log("Container:", container);
-        
         if (!container) {
             console.error("Container not found!");
             return;
         }
         
-        const itemId = container.children.length + 1;
-        console.log("Creating new item with ID:", itemId);
-        
-        const newItem = document.createElement('div');
-        newItem.className = 'class-price-item';
-        newItem.dataset.itemId = itemId;
-        
-        newItem.innerHTML = `
-            <div class="row">
-                <div class="col-11">
-                    <div class="row mb-2">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label required">Hình thức lớp</label>
-                                <select name="class_format[]" class="form-select" required>
-                                    <option value="PT">PT 1:1</option>
-                                    <option value="GROUP_2">Nhóm 1:2</option>
-                                    <option value="GROUP_3">Nhóm 1:3</option>
-                                    <option value="GROUP_6">Nhóm 1:6</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label required">Khung giờ</label>
-                                <select name="time_slot[]" class="form-select" required>
-                                    <option value="ALL">Tất cả khung giờ</option>
-                                    <option value="MORNING_LOW">Thấp điểm sáng</option>
-                                    <option value="MORNING_MID">Trung điểm sáng</option>
-                                    <option value="MORNING_PEAK">Cao điểm sáng</option>
-                                    <option value="AFTERNOON_LOW">Thấp điểm chiều</option>
-                                    <option value="AFTERNOON_MID">Trung điểm chiều</option>
-                                    <option value="AFTERNOON_PEAK">Cao điểm chiều</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label required">Số buổi</label>
-                                <input type="number" name="number_of_sessions[]" class="form-control sessions-input" 
-                                    value="10" min="1" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label required">Đơn giá (VNĐ/buổi)</label>
-                                <input type="number" name="unit_price[]" class="form-control price-input" 
-                                    value="300000" min="0" step="1000" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">Thành tiền (VNĐ)</label>
-                                <input type="text" name="total_price[]" class="form-control total-price" 
-                                    value="3000000" readonly>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-1 d-flex align-items-center justify-content-center">
-                    <a class="remove-price-btn" onclick="removePrice(this)">
-                        <i class="fas fa-trash fa-lg"></i>
-                    </a>
-                </div>
-            </div>
-        `;
-        
-        container.appendChild(newItem);
-        updateTotalPrice(newItem);
-    }
-    
-    // Đảm bảo DOM đã tải xong trước khi thực thi mã JavaScript
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log("DOM fully loaded");
-        
-        // Đăng ký sự kiện click cho nút thêm bảng giá
-        document.getElementById('add-price-btn').addEventListener('click', function() {
-            console.log("Button clicked");
-            addNewPriceItem();
-        });
-        
-        // Tính tổng tiền khi thay đổi đơn giá hoặc số buổi
-        document.addEventListener('input', function(event) {
-            if (event.target.classList.contains('price-input') || event.target.classList.contains('sessions-input')) {
-                const item = event.target.closest('.class-price-item');
-                updateTotalPrice(item);
-            }
-        });
-        
-        // Cập nhật tất cả thành tiền
-        updateAllTotalPrices();
-        
-        // Tự động thêm mục nếu không có
-        const priceItems = document.querySelectorAll('.class-price-item');
-        console.log("Initial number of price items:", priceItems.length);
-        if (priceItems.length === 0) {
-            console.log("Auto-adding first price item");
-            addNewPriceItem();
+        const template = document.getElementById('price-item-template');
+        if (!template) {
+            console.error("Template not found!");
+            return;
         }
-    });
-    
-    // Form validation
-    (function() {
-        'use strict';
         
-        const forms = document.querySelectorAll('.needs-validation');
+        const newItem = template.content.cloneNode(true);
+        container.appendChild(newItem);
         
-        Array.from(forms).forEach(function (form) {
-            form.addEventListener('submit', function (event) {
-                if (!form.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                
-                form.classList.add('was-validated');
-            }, false);
-        });
-    })();
+        // Cập nhật thành tiền cho mục mới
+        const lastItem = container.lastElementChild;
+        updateTotalPrice(lastItem);
+    }
     
     // Cập nhật thành tiền
     function updateTotalPrice(item) {
@@ -362,6 +252,68 @@
             updateTotalPrice(item);
         });
     }
+    
+    // Đảm bảo DOM đã tải xong trước khi thực thi mã JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        // Đăng ký sự kiện click cho nút thêm bảng giá
+        const addPriceBtn = document.getElementById('add-price-btn');
+        if (addPriceBtn) {
+            addPriceBtn.addEventListener('click', addNewPriceItem);
+        }
+        
+        // Tính tổng tiền khi thay đổi đơn giá hoặc số buổi
+        document.addEventListener('input', function(event) {
+            if (event.target.classList.contains('price-input') || event.target.classList.contains('sessions-input')) {
+                const item = event.target.closest('.class-price-item');
+                updateTotalPrice(item);
+            }
+        });
+        
+        // Xử lý sự kiện khi thay đổi khung giờ
+        document.addEventListener('change', function(event) {
+            if (event.target.name === 'time_slot[]') {
+                const item = event.target.closest('.class-price-item');
+                const selectedValue = event.target.value;
+                
+                // Nếu chọn "Tất cả khung giờ", vô hiệu hóa các options khác
+                if (selectedValue === 'ALL') {
+                    const timeSlots = document.querySelectorAll('select[name="time_slot[]"]');
+                    timeSlots.forEach(slot => {
+                        if (slot !== event.target) {
+                            slot.value = 'ALL';
+                        }
+                    });
+                }
+            }
+        });
+        
+        // Cập nhật tất cả thành tiền
+        updateAllTotalPrices();
+        
+        // Tự động thêm mục nếu không có
+        const container = document.getElementById('price-items-container');
+        if (container && container.children.length === 0) {
+            addNewPriceItem();
+        }
+    });
+    
+    // Form validation
+    (function() {
+        'use strict';
+        
+        const forms = document.querySelectorAll('.needs-validation');
+        
+        Array.from(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
 </script>
 {% endblock %}
 

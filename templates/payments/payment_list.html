@@ -1,6 +1,10 @@
 {% extends "dashboard/base.html" %}
 {% load static %}
 {% load humanize %}
+{% load vnfilters2 %}
+
+<!-- TEST FILTER INTDOT2 -->
+<div style="color:red;font-weight:bold;">Test intdot2: {{ 123456789|intdot2 }} đ</div>
 
 {% block title %}Danh sách đơn hàng - HD Pilates Studio{% endblock %}
 
@@ -103,6 +107,18 @@
     display: flex;
     justify-content: center;
   }
+  .payment-table, .payment-table th, .payment-table td {
+    font-size: 13px !important;
+  }
+  .stat-box {
+    min-width: 180px;
+    margin-right: 10px;
+    margin-bottom: 0;
+    text-align: center;
+    font-size: 15px;
+    border: 1px solid #e0e0e0;
+    padding: 12px 0;
+  }
 </style>
 {% endblock %}
 
@@ -123,30 +139,49 @@
     </div>
   </div>
 
+  <div class="row mb-3">
+    <div class="col stat-box" style="background:#16a085;color:#fff;">
+      Tổng doanh thu<br><strong>{{ total_revenue|intdot2 }} đ</strong>
+    </div>
+    <div class="col stat-box" style="background:#007bff;color:#fff;">
+      Đã nhận<br><strong>{{ total_received|intdot2 }} đ</strong>
+    </div>
+    <div class="col stat-box" style="background:#ffc107;color:#333;">
+      Còn nợ<br><strong>{{ total_debt|intdot2 }} đ</strong>
+    </div>
+    <div class="col stat-box" style="background:#17a2b8;color:#fff;">
+      Tổng số đơn<br><strong>{{ total_orders }}</strong>
+    </div>
+    <div class="col stat-box" style="background:#6c757d;color:#fff;">
+      Gói doanh thu cao nhất<br><strong>{{ top_package_name }} ({{ top_package_total|intdot2 }} đ)</strong>
+    </div>
+  </div>
+  <h5 class="mt-4 mb-2">Phân tích doanh thu theo phòng</h5>
+  <table class="payment-table mt-2">
+    <thead>
+      <tr>
+        <th>Chi nhánh</th>
+        <th>Doanh thu</th>
+        <th>Đã nhận</th>
+        <th>Còn nợ</th>
+        <th>Số đơn</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for stat in branch_stats %}
+        <tr>
+          <td>{{ stat.name }}</td>
+          <td>{{ stat.total|floatformat:0|intdot2 }} đ</td>
+          <td>{{ stat.received|floatformat:0|intdot2 }} đ</td>
+          <td>{{ stat.debt|floatformat:0|intdot2 }} đ</td>
+          <td>{{ stat.count }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
   <div class="card">
     <div class="card-body">
-      <!-- Thống kê tổng quát -->
-      <div class="summary-box">
-        <div>
-          <div class="date-label">
-            {% if date_from and date_to %}
-              Doanh thu từ {{ date_from|date:"d/m/Y" }} đến {{ date_to|date:"d/m/Y" }}
-            {% elif date_from %}
-              Doanh thu từ {{ date_from|date:"d/m/Y" }}
-            {% elif date_to %}
-              Doanh thu đến {{ date_to|date:"d/m/Y" }}
-            {% else %}
-              Tổng doanh thu
-            {% endif %}
-          </div>
-          <div class="total-amount">{{ total_revenue|floatformat:0|intcomma }} đ</div>
-        </div>
-        
-        <div>
-          <span class="badge bg-info text-white">Tổng số: {{ payments.count }} đơn hàng</span>
-        </div>
-      </div>
-
       <!-- Thanh tìm kiếm và lọc -->
       <div class="search-filter-bar">
         <form method="get" action="{% url 'payment_list' %}" class="d-flex flex-wrap w-100 gap-2">
@@ -212,22 +247,18 @@
                   {% endif %}
                 </td>
                 <td>{{ payment.payment_date|date:"d/m/Y" }}</td>
-                <td>{{ payment.amount|floatformat:0|intcomma }} đ</td>
-                <td><strong>{{ payment.final_amount|floatformat:0|intcomma }} đ</strong></td>
+                <td>{{ payment.amount|floatformat:0|intdot2 }} đ</td>
+                <td><strong>{{ payment.final_amount|floatformat:0|intdot2 }} đ</strong></td>
                 <td>
                   {% for key, value in payment_methods %}
                     {% if key == payment.payment_method %}{{ value }}{% endif %}
                   {% endfor %}
                 </td>
                 <td>
-                  {% if payment.status == 'pending' %}
-                    <span class="payment-status status-pending">Đang chờ</span>
-                  {% elif payment.status == 'completed' %}
-                    <span class="payment-status status-completed">Hoàn thành</span>
-                  {% elif payment.status == 'failed' %}
-                    <span class="payment-status status-failed">Thất bại</span>
-                  {% elif payment.status == 'refunded' %}
-                    <span class="payment-status status-refunded">Hoàn tiền</span>
+                  {% if payment.remaining_amount == 0 %}
+                    <span class="payment-status status-completed" style="background:#e9f7ef;color:#16a085;">Thanh toán hết</span>
+                  {% else %}
+                    <span class="payment-status status-pending" style="background:#fff3cd;color:#856404;">Thanh toán 1 phần</span>
                   {% endif %}
                 </td>
                 <td>
@@ -298,6 +329,16 @@
           </ul>
         </div>
       {% endif %}
+
+      <form method="get" class="d-flex align-items-center mb-2">
+        <select name="branch" class="form-select" style="width: 180px; font-size: 13px;">
+          <option value="">-- Tất cả chi nhánh --</option>
+          {% for branch in branches %}
+            <option value="{{ branch.id }}" {% if selected_branch == branch.id %}selected{% endif %}>{{ branch.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm ms-2">Lọc theo phòng</button>
+      </form>
     </div>
   </div>
 </div>

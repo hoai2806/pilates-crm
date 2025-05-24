@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import csv
 import json
 import os
+from django.views.decorators.http import require_POST
 
 # Thêm hàm để xử lý chuỗi tiền tệ
 def clean_currency(value):
@@ -19,17 +20,20 @@ def clean_currency(value):
 from .models import Payment, Expense
 from customers.models import Customer, CustomerPackage
 from classes.models import ClassType, ClassTypePrice
+from instructors.models import Instructor
+from branches.models import Branch
 
 @login_required
 def payment_list(request):
     """Hiển thị danh sách đơn hàng"""
-    payments = Payment.objects.select_related('customer', 'class_type').order_by('-payment_date')
+    payments = Payment.objects.select_related('customer', 'class_type', 'branch').order_by('-payment_date')
     
     # Tìm kiếm và lọc
     search_query = request.GET.get('search', '')
     status_filter = request.GET.get('status', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
+    branch_id = request.GET.get('branch')
     
     if search_query:
         payments = payments.filter(
@@ -56,10 +60,44 @@ def payment_list(request):
         except ValueError:
             pass
     
+    if branch_id:
+        payments = payments.filter(branch_id=branch_id)
+    
     # Tính tổng doanh thu cho kết quả tìm kiếm
-    total_revenue = payments.filter(status='completed').aggregate(
-        total=Sum('amount') # Sửa lại thành amount
-    )['total'] or 0
+    total_revenue = payments.aggregate(total=Sum('amount'))['total'] or 0
+    
+    # Tổng doanh thu đã nhận
+    total_received = payments.aggregate(total=Sum('paid_amount'))['total'] or 0
+    
+    # Tổng tiền còn nợ
+    total_debt = payments.aggregate(total=Sum('remaining_amount'))['total'] or 0
+    
+    # Tổng số đơn hàng
+    total_orders = payments.count()
+    
+    # Gói doanh thu cao nhất
+    top_package = (
+        payments.values('class_type__name')
+        .annotate(total=Sum('amount'))
+        .order_by('-total')
+        .first()
+    )
+    top_package_name = top_package['class_type__name'] if top_package else ''
+    top_package_total = top_package['total'] if top_package else 0
+    
+    # Danh sách chi nhánh
+    branches = Branch.objects.all()
+    # Phân tích doanh thu theo từng chi nhánh
+    branch_stats = []
+    for branch in branches:
+        branch_payments = Payment.objects.filter(branch=branch)
+        branch_stats.append({
+            'name': branch.name,
+            'total': branch_payments.aggregate(total=Sum('amount'))['total'] or 0,
+            'received': branch_payments.aggregate(total=Sum('paid_amount'))['total'] or 0,
+            'debt': branch_payments.aggregate(total=Sum('remaining_amount'))['total'] or 0,
+            'count': branch_payments.count(),
+        })
     
     context = {
         'payments': payments,
@@ -68,6 +106,14 @@ def payment_list(request):
         'date_from': date_from,
         'date_to': date_to,
         'total_revenue': total_revenue,
+        'total_received': total_received,
+        'total_debt': total_debt,
+        'total_orders': total_orders,
+        'top_package_name': top_package_name,
+        'top_package_total': top_package_total,
+        'branches': branches,
+        'selected_branch': int(branch_id) if branch_id else None,
+        'branch_stats': branch_stats,
         'statuses': Payment.STATUS_CHOICES,
         'payment_methods': Payment.PAYMENT_METHOD_CHOICES,
     }
@@ -94,51 +140,74 @@ def payment_create(request):
     """Tạo đơn hàng mới"""
     customers = Customer.objects.all().order_by('full_name')
     class_types = ClassType.objects.all().order_by('name')
+    instructors = Instructor.objects.filter(active=True).order_by('full_name')
+    branches = Branch.objects.filter(active=True).order_by('name')
     
     if request.method == 'POST':
         try:
             print("Xử lý POST request tạo đơn hàng mới")
-            # Xử lý form tạo đơn hàng
+            # Lấy dữ liệu từ form với tên input mới
             customer_id = request.POST.get('customer')
             class_type_id = request.POST.get('class_type')
             class_price_id = request.POST.get('class_price')
-            amount_value = request.POST.get('amount_value')  # Lấy từ hidden field
-            amount = request.POST.get('amount')  # Giá trị hiển thị có định dạng
-            
-            print(f"Dữ liệu từ form: customer_id={customer_id}, class_type_id={class_type_id}, class_price_id={class_price_id}")
-            print(f"Thông tin giá: amount_value={amount_value}, amount={amount}")
-            
-            # Xử lý ưu đãi
+            amount_value = request.POST.get('payment_amount_value') or request.POST.get('amount_value') or '0'
+            paid_amount = request.POST.get('paid_amount_value') or '0'
             discount_type = request.POST.get('discount_type')
             discount_percentage = request.POST.get('discount_percentage', '0')
             discount_amount_value = request.POST.get('discount_amount', '0')
             bonus_sessions = request.POST.get('bonus_sessions', '0')
-            
-            # Xử lý thanh toán một phần
             payment_type = request.POST.get('payment_type', 'full')
-            paid_amount = request.POST.get('paid_amount_value', '0')  # Lấy từ hidden field
             remaining_payment_due_date = request.POST.get('remaining_payment_due_date')
-            
             payment_method = request.POST.get('payment_method')
             payment_date = request.POST.get('payment_date')
             status = request.POST.get('status')
             notes = request.POST.get('notes')
-            
-            # Xử lý file chứng từ thanh toán
             payment_proof = request.FILES.get('payment_proof')
-            
+            instructor_id = request.POST.get('instructor')
+            instructor = Instructor.objects.get(id=instructor_id) if instructor_id else None
+            branch_id = request.POST.get('branch')
+            branch = Branch.objects.get(id=branch_id) if branch_id else None
+
             # Lấy thông tin khách hàng và gói tập
             customer = Customer.objects.get(id=customer_id)
             class_price = ClassTypePrice.objects.get(id=class_price_id)
             class_type = ClassType.objects.get(id=class_type_id)
-            
+
             # Parse số tiền từ hidden field
             try:
-                amount_value = float(amount_value)
+                amount_value = float(str(amount_value).replace('.', '').replace(',', ''))
             except (ValueError, TypeError):
                 print(f"Lỗi parse giá trị amount_value: {amount_value}")
                 amount_value = 0
-            
+            try:
+                paid_amount = float(str(paid_amount).replace('.', '').replace(',', ''))
+            except (ValueError, TypeError):
+                paid_amount = 0
+
+            # Tính giảm giá
+            discount = 0
+            discount_val = 0
+            if discount_type == 'percentage':
+                discount_val = float(str(discount_percentage).replace('%','').replace(',','').replace('.',''))
+                discount = int(amount_value * discount_val / 100)
+            elif discount_type == 'amount':
+                discount_val = float(str(discount_amount_value).replace('.', '').replace(',', ''))
+                discount = int(discount_val)
+            final_amount = int(amount_value - discount)
+            if final_amount < 0:
+                final_amount = 0
+
+            # Tính số tiền còn lại
+            if payment_type == 'partial':
+                if paid_amount > final_amount:
+                    paid_amount = final_amount
+                remaining_amount = final_amount - paid_amount
+                if remaining_amount < 0:
+                    remaining_amount = 0
+            else:
+                paid_amount = final_amount
+                remaining_amount = 0
+
             # Tạo đơn hàng mới
             payment = Payment.objects.create(
                 customer=customer,
@@ -148,64 +217,34 @@ def payment_create(request):
                 status=status,
                 notes=notes,
                 class_type=class_type,
-                payment_type=payment_type
+                payment_type=payment_type,
+                instructor=instructor,
+                branch=branch,
+                discount_type=discount_type,
+                discount_value=discount_val,
+                paid_amount=paid_amount,
+                remaining_amount=remaining_amount,
+                remaining_payment_due_date=remaining_payment_due_date if payment_type == 'partial' else None,
             )
-            
-            # Lưu thông tin ưu đãi
-            if discount_type == 'percentage':
-                payment.discount_type = 'percentage'
-                discount_percentage_clean = discount_percentage.replace('.', '').replace(' %', '').replace('%', '')
-                payment.discount_value = float(discount_percentage_clean)
-            elif discount_type == 'amount':
-                payment.discount_type = 'amount'
-                discount_amount_clean = discount_amount_value.replace('.', '').replace(' VNĐ', '')
-                payment.discount_value = float(discount_amount_clean)
-            
-            # Xử lý thanh toán một phần
-            if payment_type == 'partial':
-                final_amount = payment.final_amount
-                if paid_amount:
-                    # Xử lý chuỗi số tiền: loại bỏ dấu chấm phân cách và đơn vị tiền tệ "VNĐ"
-                    paid_amount_clean = paid_amount.replace('.', '').replace(' VNĐ', '')
-                    payment.paid_amount = float(paid_amount_clean)
-                    payment.remaining_amount = final_amount - float(paid_amount_clean)
-                else:
-                    # Mặc định thanh toán 50%
-                    payment.paid_amount = final_amount * 0.5
-                    payment.remaining_amount = final_amount * 0.5
-                
-                if remaining_payment_due_date:
-                    payment.remaining_payment_due_date = remaining_payment_due_date
-                else:
-                    # Mặc định 30 ngày sau
-                    payment.remaining_payment_due_date = timezone.now().date() + timezone.timedelta(days=30)
-            
+
             # Lưu file chứng từ thanh toán nếu có
             if payment_proof:
-                # Tạo thư mục lưu trữ theo ngày tháng nếu chưa có
                 upload_dir = f'payment_proofs/{timezone.now().strftime("%Y/%m/%d")}'
                 if not os.path.exists(f'media/{upload_dir}'):
                     os.makedirs(f'media/{upload_dir}', exist_ok=True)
-                
-                # Đổi tên file để tránh trùng lặp
                 filename = f"{customer.id}_{timezone.now().strftime('%H%M%S')}_{payment_proof.name}"
                 file_path = f'{upload_dir}/{filename}'
-                
                 with open(f'media/{file_path}', 'wb+') as destination:
                     for chunk in payment_proof.chunks():
                         destination.write(chunk)
-                
                 payment.payment_proof = file_path
-            
-            payment.save()
-            
+                payment.save()
+
             # Tạo gói tập mới cho khách hàng
             regular_sessions = class_price.number_of_sessions
             total_sessions = regular_sessions + int(bonus_sessions)
-            
             start_date = timezone.now().date()
-            end_date = start_date + timedelta(days=90)  # Mặc định 90 ngày
-            
+            end_date = start_date + timedelta(days=90)
             customer_package = CustomerPackage.objects.create(
                 customer=customer,
                 class_type=class_type,
@@ -216,7 +255,6 @@ def payment_create(request):
                 status='active',
                 payment=payment
             )
-            
             messages.success(request, f'Đã tạo đơn hàng và gói tập mới cho khách hàng {customer.full_name}')
             return redirect('payment_detail', pk=payment.id)
             
@@ -231,6 +269,25 @@ def payment_create(request):
         'class_types': class_types,
         'today_date': timezone.now(),
         'payment_types': Payment.PAYMENT_TYPE_CHOICES,
+        'instructors': instructors,
+        'branches': branches,
+        'payment': None,
+        'paid_amount': '',
+        'remaining_amount': '',
+        'discount_percentage': '',
+        'discount_amount': '',
+        'bonus_sessions': '',
+        'selected_customer': '',
+        'selected_class_type': '',
+        'selected_instructor': '',
+        'selected_branch': '',
+        'selected_class_price': '',
+        'payment_type': 'full',
+        'payment_method': '',
+        'status': '',
+        'payment_date': '',
+        'amount': '',
+        'final_amount': '',
     }
     
     return render(request, 'payments/payment_form.html', context)
@@ -241,6 +298,8 @@ def payment_edit(request, pk):
     payment = get_object_or_404(Payment, pk=pk)
     customers = Customer.objects.all().order_by('full_name')
     class_types = ClassType.objects.all().order_by('name')
+    instructors = Instructor.objects.filter(active=True).order_by('full_name')
+    branches = Branch.objects.filter(active=True).order_by('name')
     
     # Lấy thông tin về gói tập liên quan để hiển thị
     customer_package = CustomerPackage.objects.filter(payment=payment).first()
@@ -261,6 +320,7 @@ def payment_edit(request, pk):
         # Xử lý thanh toán một phần
         payment_type = request.POST.get('payment_type', 'full')
         paid_amount = request.POST.get('paid_amount', '0')
+        paid_amount_value = request.POST.get('paid_amount_value', '0')
         remaining_payment_due_date = request.POST.get('remaining_payment_due_date')
         
         payment_method = request.POST.get('payment_method')
@@ -270,6 +330,21 @@ def payment_edit(request, pk):
         
         # Xử lý file chứng từ thanh toán
         payment_proof = request.FILES.get('payment_proof')
+        
+        # Xử lý instructor
+        instructor_id = request.POST.get('instructor')
+        instructor = None
+        if instructor_id:
+            instructor = Instructor.objects.get(id=instructor_id)
+        
+        # Lấy branch_id
+        branch_id = request.POST.get('branch')
+        branch = None
+        if branch_id:
+            branch = Branch.objects.get(id=branch_id)
+        
+        # Log chi tiết các giá trị nhận được từ form
+        print(f"[DEBUG-POST] paid_amount={paid_amount}, paid_amount_value={paid_amount_value}, payment_type={payment_type}, amount={amount}")
         
         try:
             customer = Customer.objects.get(id=customer_id)
@@ -289,6 +364,8 @@ def payment_edit(request, pk):
             payment.notes = notes
             payment.class_type = class_type
             payment.payment_type = payment_type
+            payment.instructor = instructor
+            payment.branch = branch
             
             # Lưu thông tin ưu đãi
             if discount_type == 'percentage':
@@ -370,15 +447,18 @@ def payment_edit(request, pk):
     
     # Trường hợp GET request, hiển thị form với dữ liệu hiện tại
     context = {
-        'payment': payment,
         'customers': customers,
         'class_types': class_types,
+        'today_date': timezone.now(),
+        'payment_types': Payment.PAYMENT_TYPE_CHOICES,
+        'instructors': instructors,
+        'payment': payment,
+        'customer_package': customer_package,
         'selected_customer': payment.customer.id if payment.customer else None,
         'selected_class_type': payment.class_type.id if payment.class_type else None,
-        'customer_package': customer_package,
-        'today_date': timezone.now(),
-        'bonus_sessions': customer_package.total_sessions - customer_package.class_type.prices.first().number_of_sessions if customer_package and customer_package.class_type.prices.exists() else 0,
-        'payment_types': Payment.PAYMENT_TYPE_CHOICES,
+        'selected_instructor': payment.instructor.id if payment.instructor else None,
+        'selected_branch': payment.branch.id if payment.branch else None,
+        'branches': branches,
     }
     
     # Lấy thông tin về class_price (gói tập) đã chọn
@@ -400,11 +480,24 @@ def payment_edit(request, pk):
     if customer_package and selected_class_price:
         bonus_sessions = customer_package.total_sessions - selected_class_price.number_of_sessions
     
-    # Bổ sung thông tin vào context
+    # Bổ sung log debug giá trị remaining_amount
+    print(f"[DEBUG] payment.id={payment.id}, paid_amount={payment.paid_amount}, remaining_amount={payment.remaining_amount}, final_amount={payment.final_amount}")
     context.update({
         'selected_class_price': selected_class_price.id if selected_class_price else None,
         'bonus_sessions': max(0, bonus_sessions),
-        'payment_types': Payment.PAYMENT_TYPE_CHOICES,
+        'discount_type': payment.discount_type,
+        'discount_percentage': payment.discount_value if payment.discount_type == 'percentage' else '',
+        'discount_amount': payment.discount_value if payment.discount_type == 'amount' else '',
+        'payment_type': payment.payment_type,
+        'payment_method': payment.payment_method,
+        'status': payment.status,
+        'payment_date': payment.payment_date,
+        'paid_amount': payment.paid_amount,
+        'remaining_amount': payment.remaining_amount,
+        'remaining_payment_due_date': payment.remaining_payment_due_date,
+        'amount': payment.amount,
+        'final_amount': payment.final_amount,
+        'debug_remaining_amount': payment.remaining_amount,
     })
     
     # Xử lý thông tin ưu đãi hiện tại
@@ -565,8 +658,21 @@ def class_prices_by_type(request, class_type_id):
                 'name': f"{price.get_class_format_display()} - {price.number_of_sessions} buổi",
                 'price': float(price.unit_price),
                 'total_sessions': price.number_of_sessions,
+                'time_slot': price.time_slot,
+                'time_slot_display': price.get_time_slot_display(),
+                'class_format': price.class_format,
+                'class_format_display': price.get_class_format_display()
             })
         
         return JsonResponse({"results": data})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+@login_required
+@require_POST
+def payment_delete(request, pk):
+    payment = get_object_or_404(Payment, id=pk)
+    customer_name = payment.customer.full_name
+    payment.delete()
+    messages.success(request, f'Đã xóa đơn hàng của khách hàng {customer_name}')
+    return redirect('payment_list')

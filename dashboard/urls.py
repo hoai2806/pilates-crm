@@ -18,6 +18,7 @@ urlpatterns = [
     path('lop-hoc/them-moi/', views.classtype_form, name='classtype_form'),
     path('lop-hoc/<int:pk>/chinh-sua/', views.classtype_form, name='classtype_edit'),
     path('lop-hoc/<int:pk>/xoa/', views.classtype_delete, name='classtype_delete'),
+    path('lop-hoc/<int:pk>/nhan-doi/', views.classtype_duplicate, name='classtype_duplicate'),
     path('chi-nhanh/', views.branch_list, name='branch_list'),
     path('chi-nhanh/them-moi/', views.branch_form, name='branch_form'),
     path('chi-nhanh/<int:pk>/chinh-sua/', views.branch_form, name='branch_edit'),

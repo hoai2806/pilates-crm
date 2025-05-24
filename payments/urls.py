@@ -6,6 +6,7 @@ urlpatterns = [
     path('them-moi/', views.payment_create, name='payment_create'),
     path('<int:pk>/', views.payment_detail, name='payment_detail'),
     path('<int:pk>/chinh-sua/', views.payment_edit, name='payment_edit'),
+    path('<int:pk>/xoa/', views.payment_delete, name='payment_delete'),
     path('export-csv/', views.payment_export_csv, name='payment_export_csv'),
     
     # API endpoint

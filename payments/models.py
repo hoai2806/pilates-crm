@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 from customers.models import Customer
 from classes.models import ClassType, ClassTypePrice
+from instructors.models import Instructor
+from branches.models import Branch
 
 class Payment(models.Model):
     PAYMENT_METHOD_CHOICES = [
@@ -52,6 +54,9 @@ class Payment(models.Model):
                                           help_text="Số tiền còn lại cần thanh toán")
     remaining_payment_due_date = models.DateField(null=True, blank=True,
                                                help_text="Ngày đến hạn thanh toán số tiền còn lại")
+    
+    instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True, related_name='sold_payments', verbose_name='Người bán hàng (HLV)')
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments', verbose_name='Chi nhánh')
     
     class Meta:
         ordering = ['-payment_date', '-created_at']

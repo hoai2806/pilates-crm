@@ -1,0 +1,79 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+<link rel="stylesheet" href="{% static 'admin/css/forms.css' %}">
+<style>
+    .form-row label, .form-row input, .form-row select, .form-row textarea {
+        font-size: 13px !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {% if messages %}
+        <ul class="messagelist">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <div class="form-row">
+            <label for="full_name">Họ và tên:</label>
+            <input type="text" name="full_name" id="full_name" value="{{ full_name|default:'' }}" required>
+        </div>
+        <div class="form-row">
+            <label for="phone">Số điện thoại:</label>
+            <input type="text" name="phone" id="phone" value="{{ phone|default:'' }}" required>
+        </div>
+        <div class="form-row">
+            <label for="gender">Giới tính:</label>
+            <select name="gender" id="gender" required>
+                <option value="">-- Chọn --</option>
+                <option value="M" {% if gender == 'M' %}selected{% endif %}>Nam</option>
+                <option value="F" {% if gender == 'F' %}selected{% endif %}>Nữ</option>
+                <option value="O" {% if gender == 'O' %}selected{% endif %}>Khác</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="date_of_birth">Ngày sinh:</label>
+            <input type="date" name="date_of_birth" id="date_of_birth" value="{{ date_of_birth|default:'' }}">
+        </div>
+        <div class="form-row">
+            <label for="address">Địa chỉ:</label>
+            <input type="text" name="address" id="address" value="{{ address|default:'' }}">
+        </div>
+        <div class="form-row">
+            <label for="hire_date">Ngày tuyển dụng:</label>
+            <input type="date" name="hire_date" id="hire_date" value="{{ hire_date|default:'' }}" required>
+        </div>
+        <div class="form-row">
+            <label for="specialties">Chuyên môn:</label>
+            <input type="text" name="specialties" id="specialties" value="{{ specialties|default:'' }}">
+        </div>
+        <div class="form-row">
+            <label for="certifications">Chứng chỉ:</label>
+            <textarea name="certifications" id="certifications">{{ certifications|default:'' }}</textarea>
+        </div>
+        <div class="form-row">
+            <label for="bio">Tiểu sử:</label>
+            <textarea name="bio" id="bio">{{ bio|default:'' }}</textarea>
+        </div>
+        <div class="form-row">
+            <label for="profile_image">Ảnh đại diện:</label>
+            <input type="file" name="profile_image" id="profile_image" accept="image/*">
+        </div>
+        <div class="form-row">
+            <label for="active">Đang làm việc:</label>
+            <input type="checkbox" name="active" id="active" {% if active|default:True %}checked{% endif %}>
+        </div>
+        <div class="form-row">
+            <button type="submit" class="default">Lưu</button>
+            <a href="{% url 'instructors:danh_sach' %}" class="button cancel-link">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %} 

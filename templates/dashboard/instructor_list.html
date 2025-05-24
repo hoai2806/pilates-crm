@@ -65,7 +65,6 @@
                             <tr>
                                 <th>Họ và tên</th>
                                 <th>Số điện thoại</th>
-                                <th>Email</th>
                                 <th>Chuyên môn</th>
                                 <th>Trạng thái</th>
                                 <th>Thao tác</th>
@@ -76,7 +75,6 @@
                                 <tr>
                                     <td>{{ instructor.full_name }}</td>
                                     <td>{{ instructor.phone }}</td>
-                                    <td>{{ instructor.email|default:"--" }}</td>
                                     <td>{{ instructor.specialties|default:"--" }}</td>
                                     <td>
                                         {% if instructor.active %}

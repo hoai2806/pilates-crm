@@ -1,5 +1,6 @@
 {% extends 'reback/layout.html' %}
 {% load i18n %}
+{% load humanize %}
 
 {% block title %}Đơn hàng{% endblock %}
 
@@ -84,7 +85,7 @@
                                         Khác
                                     {% endif %}
                                 </td>
-                                <td>{{ payment.final_amount|floatformat:0 }} đ</td>
+                                <td>{{ payment.final_amount|floatformat:0|intcomma }} đ</td>
                                 <td>
                                     {% if payment.status == 'completed' %}
                                         <span class="badge bg-success">Hoàn thành</span>
